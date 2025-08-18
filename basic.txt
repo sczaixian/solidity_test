@@ -7,3 +7,10 @@ gas:
 
 indexed ----  375
 uint256 ----  16
+
+
+
+
+
+IPFS
+https://docs.ipfs.tech/install/ipfs-desktop/#windows
