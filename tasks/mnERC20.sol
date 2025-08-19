@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 interface IMERC20 {
     // 发行量
@@ -28,6 +28,11 @@ contract MERC20 is IMERC20{
     address public owner; // 拥有者
 
     uint256 public totalSupp ;  // 代币的总供应量
+    /*
+     线上合约 ---->  代理合约  ---->  聚合合约  ---->  off-chain
+     */
+    AggregatorV3Interface internal dataFeed;  // 聚合合约
+
     mapping(address => uint256) private _balance;  // 余额映射
 
     mapping (address => mapping(address => uint256)) private _allowAmount; // 授权代扣
@@ -45,7 +50,7 @@ contract MERC20 is IMERC20{
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-
+        dataFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
         owner = msg.sender;
         _mint(msg.sender, _initSupply);
     }
@@ -53,7 +58,7 @@ contract MERC20 is IMERC20{
 
     modifier onlyOwner(){
         if(msg.sender != owner) revert OnlyOwner();
-        _;
+        _;   // 这种形式表示 先判断 再 执行其他代码，放到上面就反过来
     }
 
     function balanceOf(address addr) external view returns(uint256){
@@ -90,12 +95,13 @@ contract MERC20 is IMERC20{
     }
 
     function _transfer(address from, address to, uint256 amount) internal returns(bool){
-        if(_balance[from] < amount) revert InsufficientBalance();
+        uint256 coverAmount = convertEthToUsd(amount);
+        if(_balance[from] < coverAmount) revert InsufficientBalance();
         unchecked {
-            _balance[from] -= amount;
-            _balance[to] += amount;
+            _balance[from] -= coverAmount;
+            _balance[to] += coverAmount;
         }
-        emit Transfer(from, to, amount);
+        emit Transfer(from, to, coverAmount);
         return true;
     }
 
@@ -105,15 +111,39 @@ contract MERC20 is IMERC20{
     }
 
     function _approve(address _owner, address spender, uint256 amount) private {
-        _allowAmount[_owner][spender] = amount;
-        emit Approval(_owner, spender, amount);
+        uint256 coverAmount = convertEthToUsd(amount);
+        _allowAmount[_owner][spender] = coverAmount;
+        emit Approval(_owner, spender, coverAmount);
+    }
+    /* 转移的只是token， 这些都是通过合约控制的
+        _mint
+        _transfer
+        _approve
+    */
+    function _mint(address account, uint256 amount) private{
+        uint256 coverAmount = convertEthToUsd(amount);
+        unchecked { // 显式禁用算术运算的溢出检查, 会增加gas消耗，在明知道不会溢出的情况下可以不检查
+            _balance[account] += coverAmount;
+            totalSupp += coverAmount;
+        }
+        emit Transfer(address(0), account, coverAmount);  // 铸币事件（从零地址发出）
     }
 
-    function _mint(address account, uint256 amount) private{
-        totalSupp += amount;
-        unchecked { // 显式禁用算术运算的溢出检查, 会增加gas消耗，在明知道不会溢出的情况下可以不检查
-            _balance[account] += amount;
-        }
-        emit Transfer(address(0), account, amount);  // 铸币事件（从零地址发出）
+    function getChainlinkDataFeedLatestAnswer() public view returns (int) {
+        // prettier-ignore
+        (
+            /* uint80 roundId */,
+            int256 answer,
+            /*uint256 startedAt*/,
+            /*uint256 updatedAt*/,
+            /*uint80 answeredInRound*/
+        ) = dataFeed.latestRoundData();
+        return answer;
+    }
+
+    // eth 换算成美元
+    function convertEthToUsd(uint256 ethAmount) internal view returns(uint256){
+        uint256 ethPrice = uint256(getChainlinkDataFeedLatestAnswer());
+        return ethAmount * ethPrice / (10**8) ;  // ethAmount 单位是 wei  ethPrice 精度是 十的八次方
     }
 }

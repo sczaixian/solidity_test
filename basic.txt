@@ -66,3 +66,14 @@ npx hardhat test nodejs
 npx hardhat run scripts/send-op-tx.ts
 
 npx hardhat ignition deploy ignition/modules/Counter.ts
+
+
+npm install @openzeppelin/contracts
+npm install @chainlink/contracts
+
+
+hardhat-config
+sepolia
+url:  alchemy  infura  quickNode
+
+alchemy.com
