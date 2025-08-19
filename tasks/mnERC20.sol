@@ -5,8 +5,6 @@ pragma solidity ^0.8.26;
 
 
 
-
-
 interface IMERC20 {
     // 发行量
     function totalSupply() external view returns(uint256);

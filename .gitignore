@@ -13,3 +13,25 @@ states/
 # Optional
 .env
 .env.local
+
+
+# Node modules
+/hardhat_test/node_modules
+
+# Compilation output
+/hardhat_test/dist
+
+# pnpm deploy output
+/hardhat_test/bundle
+
+# Hardhat Build Artifacts
+/hardhat_test/artifacts
+
+# Hardhat compilation (v2) support directory
+/hardhat_test/cache
+
+# Typechain output
+/hardhat_test/types
+
+# Hardhat coverage reports
+/hardhat_test/coverage

@@ -16,15 +16,15 @@ IPFS
 https://docs.ipfs.tech/install/ipfs-desktop/#windows
 
 
-    预言机
+    预言机：输入预言机（链下往链上送数据）；输出预言机；计算预言机（链下执行计算任务）
+
+    预言机是指获取、验证外部信息（即存储在链下的信息）并将外部信息传送给在区块链上运行的智能合约的应用程序
+    主要解决不确定性交易达成共识问题
 
 链上获得链下的数据或信息
 
 提交交易，广播交易，达成共识
 
-每次执行结果都是一致的：deterministic transaction （确定性交易）
-但是有些不是确定性交易，比如有其他变量因素，不同人，不同时间，结果不同，--- 这样就没有办法达成共识
-需要第三方 节点来提供 链上获取链下数据；
 
 多节点预言机网络 DON（decentralized oracle network） 
 
@@ -34,3 +34,35 @@ https://docs.ipfs.tech/install/ipfs-desktop/#windows
 线下数据 --> data providers ---> DON ---> transmit ---> data feed contract(喂价合约) <--- 通过函数名和地址获取相应数据
 
 链上 通过  aggregator（聚合合约）收取 链下数据  <--- 代理合约读取聚合合约  <-----  链上合约 读取代理
+
+预言机合约是预言机服务的链上部分。 它侦听其他合约的数据请求，将数据查询转送到预言机节点，并将返回的数据广播到客户端合约。
+它公开了一些函数，客户端合约在发出数据请求时调用它们
+
+
+coin : 独立链，价值存储和支付；创建成本高，多属商品，用底层“燃料”
+token：寄生链（如以太坊），多功能（治理/资产映射/服务访问），创建成本低，可能属性：如证券，属于应用层“工具”
+
+
+
+
+
+
+
+
+
+
+npx hardhat --init
+
+编译：
+npx hardhat build
+
+测试：
+npx hardhat test solidity
+ 文件包括 contract 下面的 .t.sol 文件  和  test 文件夹下的索引 .sol文件
+
+npx hardhat test nodejs
+
+
+npx hardhat run scripts/send-op-tx.ts
+
+npx hardhat ignition deploy ignition/modules/Counter.ts
