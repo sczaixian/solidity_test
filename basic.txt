@@ -14,3 +14,23 @@ uint256 ----  16
 
 IPFS
 https://docs.ipfs.tech/install/ipfs-desktop/#windows
+
+
+    预言机
+
+链上获得链下的数据或信息
+
+提交交易，广播交易，达成共识
+
+每次执行结果都是一致的：deterministic transaction （确定性交易）
+但是有些不是确定性交易，比如有其他变量因素，不同人，不同时间，结果不同，--- 这样就没有办法达成共识
+需要第三方 节点来提供 链上获取链下数据；
+
+多节点预言机网络 DON（decentralized oracle network） 
+
+去中心化的预言机网络
+
+
+线下数据 --> data providers ---> DON ---> transmit ---> data feed contract(喂价合约) <--- 通过函数名和地址获取相应数据
+
+链上 通过  aggregator（聚合合约）收取 链下数据  <--- 代理合约读取聚合合约  <-----  链上合约 读取代理
