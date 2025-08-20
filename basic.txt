@@ -77,3 +77,26 @@ sepolia
 url:  alchemy  infura  quickNode
 
 alchemy.com
+
+
+
+www.infura.io/faucet/sepolia
+test git
+0dcf1761eeb2457fb9412f9c4bf59642
+https://mainnet.infura.io/v3/0dcf1761eeb2457fb9412f9c4bf59642
+
+
+curl --url https://mainnet.infura.io/v3/0dcf1761eeb2457fb9412f9c4bf59642 \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+
+
+
+
+decf550fcc469204df8d024977ad887c888a3164b0977f588ae645d3786b4511
+
+https://dashboard.alchemy.com/?a=index
+API key: RmsPYhly5O6-XH8UdmqCQ
+https://eth-sepolia.g.alchemy.com/v2/RmsPYhly5O6-XH8UdmqCQ
+curl 'https://eth-sepolia.g.alchemy.com/v2/RmsPYhly5O6-XH8UdmqCQ/getNFTs/?owner=vitalik.eth'

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 
@@ -40,10 +39,10 @@ contract FundMe{
         deploymentTimestamp = block.timestamp;
     }
 
-    function fund(uint256 amount) external payable {
+    function fund() external payable {
         require(convertEthToUsd(msg.value) >= MINIMUM_VALUE, "send more eth");
         require(block.timestamp <= deploymentTimestamp + lockTime, "windows is closed");
-        fundersToAmount[msg.sender] += convertEthToUsd(amount);
+        fundersToAmount[msg.sender] += convertEthToUsd(msg.value);
     }
 
     /* 转移真正的 eth， 他们是通过区块链控制的
