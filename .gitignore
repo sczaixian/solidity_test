@@ -35,3 +35,26 @@ states/
 
 # Hardhat coverage reports
 /hardhat_test/coverage
+
+
+
+# Node modules
+/hardhat2_test/node_modules
+
+# Compilation output
+/hardhat2_test/dist
+
+# pnpm deploy output
+/hardhat2_test/bundle
+
+# Hardhat Build Artifacts
+/hardhat2_test/artifacts
+
+# Hardhat compilation (v2) support directory
+/hardhat2_test/cache
+
+# Typechain output
+/hardhat2_test/types
+
+# Hardhat coverage reports
+/hardhat2_test/coverage

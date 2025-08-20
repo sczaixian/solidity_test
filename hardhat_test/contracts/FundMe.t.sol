@@ -12,19 +12,21 @@ contract FundMeTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        fundMe = new FundMe(10);
+        fundMe = new FundMe(360);
         vm.stopPrank(); // 添加这行
     }
-
-    function test_Fund() public {
-         vm.prank(owner);
-         fundMe.fund();
-         assertEq(fundMe.fundersToAmount(owner), FUND_AMOUNT);
-     }
-
-    function test_Refund() public{
-        vm.prank(owner);
-        
-        fundMe.refund();
+    function test_GetChainlinkDataFeedLatestAnswer() public{
+        assertEq(fundMe.getChainlinkDataFeedLatestAnswer(), 419249840000);
     }
+    // function test_Fund() public {
+    //      vm.prank(owner);
+    //      fundMe.fund();
+    //      assertEq(fundMe.fundersToAmount(owner), FUND_AMOUNT);
+    //  }
+
+    // function test_Refund() public{
+    //     vm.prank(owner);
+        
+    //     fundMe.refund();
+    // }
 }

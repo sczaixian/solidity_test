@@ -38,6 +38,8 @@ const config: HardhatUserConfig = {
       // accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
       url: "https://eth-sepolia.g.alchemy.com/v2/RmsPYhly5O6-XH8UdmqCQ",
       accounts: ["decf550fcc469204df8d024977ad887c888a3164b0977f588ae645d3786b4511"],
+      gas: "auto",
+      gasPrice: "auto",
     },
   },
 };

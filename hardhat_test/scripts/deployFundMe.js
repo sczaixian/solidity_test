@@ -19,19 +19,3 @@ main().then().catch((error) => {
     console.error(error)
     process.exit(1)
 })
-
-// import { ethers } from "hardhat";
-
-// async function main() {
-//   const FundMe = await ethers.getContractFactory("FundMe");
-//   const fundMe = await FundMe.deploy();
-  
-//   await fundMe.deployed();
-  
-//   console.log("FundMe deployed to:", fundMe.address);
-// }
-
-// main().catch((error) => {
-//   console.error(error);
-//   process.exitCode = 1;
-// });

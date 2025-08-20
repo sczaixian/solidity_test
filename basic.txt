@@ -53,6 +53,8 @@ token：寄生链（如以太坊），多功能（治理/资产映射/服务访�
 
 npx hardhat --init
 
+npx hardhat  查看帮助
+
 编译：
 npx hardhat build
 
@@ -68,7 +70,19 @@ npx hardhat run scripts/send-op-tx.ts
 npx hardhat ignition deploy ignition/modules/Counter.ts
 
 
-npm install @openzeppelin/contracts
+部署一般都用 ethers.js  // 文档：https://docs.ethers.org/v6/api/
+
+
+
+
+
+
+
+
+
+
+
+npm install @openzeppelin/contracts --save-dev
 npm install @chainlink/contracts
 
 
@@ -77,6 +91,19 @@ sepolia
 url:  alchemy  infura  quickNode
 
 alchemy.com
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -100,3 +127,43 @@ https://dashboard.alchemy.com/?a=index
 API key: RmsPYhly5O6-XH8UdmqCQ
 https://eth-sepolia.g.alchemy.com/v2/RmsPYhly5O6-XH8UdmqCQ
 curl 'https://eth-sepolia.g.alchemy.com/v2/RmsPYhly5O6-XH8UdmqCQ/getNFTs/?owner=vitalik.eth'
+
+
+
+
+https://etherscan.io/apidashboard  apikey
+
+TZ1JWZAT8XK1M8V4JIVD2XJGHU93GRHQ86
+
+
+
+
+
+0x751599F0a9069D95062edb35F0078cd02BA66cC9
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------js  ts 语法相关----------------------------------
+// 立即执行函数
+;(function() {
+  // ...
+})()
+
+// 以数组/正则开头时
+const x = 1
+;[1, 2, 3].forEach(console.log)
+
+
+--ts---类型声明需要特殊处理
+interface Foo {
+  bar: string;  // 类型成员需要分号或逗号
+  baz: number,  // 也可以用逗号
+}
