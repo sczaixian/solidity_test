@@ -12,7 +12,7 @@ contract FundMe{
     address public owner;
     mapping(address => uint256) public fundersToAmount;
 
-    uint256 constant MINIMUM_VALUE = 100 * 10 ** 18; //USD
+    uint256 constant MINIMUM_VALUE = 1 * 10 ** 17; //0.1USD
     uint256 constant TARGET = 1000 * 10 ** 18;
     uint256 deploymentTimestamp;
     uint256 lockTime;

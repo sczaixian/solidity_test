@@ -100,6 +100,7 @@ npm update --save-dev hardhat @nomicfoundation/hardhat-verify
 
 
 
+npm install @nomiclabs/hardhat-etherscan dotenv --save-dev
 
 
 
@@ -167,3 +168,43 @@ interface Foo {
   bar: string;  // 类型成员需要分号或逗号
   baz: number,  // 也可以用逗号
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------------------------
+PS D:\web3_porjs\solidity_test\hardhat2_test> npx hardhat run .\scripts\FundMe.js --network sepolia
+× Help us improve Hardhat with anonymous crash reports & basic usage data? (Y/n) · y
+contract deploying ...
+contract has been deployed successfully, contract addresss is 0x8a737DAE61DdCB15489587e05246B3Ce1424044D
+waiing for 5 confirmations
+[WARNING] Network and explorer-specific api keys are deprecated in favour of the new Etherscan v2 api. Support for v1 is expected to end by May 31st, 2025. To migrate, please specify a single Etherscan.io api key the apiKey config value.
+NetworkRequestError: A network request failed. This is an error from the block explorer, not Hardhat. Error: Connect Timeout Error
+    at Etherscan.isVerified (D:\web3_porjs\solidity_test\hardhat2_test\node_modules\@nomicfoundation\hardhat-verify\src\internal\etherscan.ts:140:13)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at SimpleTaskDefinition.action (D:\web3_porjs\solidity_test\hardhat2_test\node_modules\@nomicfoundation\hardhat-verify\src\internal\tasks\etherscan.ts:108:20)
+    at Environment._runTaskDefinition (D:\web3_porjs\solidity_test\hardhat2_test\node_modules\hardhat\src\internal\core\runtime-environment.ts:351:14)
+    at Environment.run (D:\web3_porjs\solidity_test\hardhat2_test\node_modules\hardhat\src\internal\core\runtime-environment.ts:184:14)
+    at SimpleTaskDefinition.action (D:\web3_porjs\solidity_test\hardhat2_test\node_modules\@nomicfoundation\hardhat-verify\src\index.ts:313:9)
+    at Environment._runTaskDefinition (D:\web3_porjs\solidity_test\hardhat2_test\node_modules\hardhat\src\internal\core\runtime-environment.ts:351:14)
+    at Environment.run (D:\web3_porjs\solidity_test\hardhat2_test\node_modules\hardhat\src\internal\core\runtime-environment.ts:184:14)
+    at verifyFundMe (D:\web3_porjs\solidity_test\hardhat2_test\scripts\FundMe.js:28:5)
+    at main (D:\web3_porjs\solidity_test\hardhat2_test\scripts\FundMe.js:23:5)
+
+把 clash 中的 tun 模式开启就好了
