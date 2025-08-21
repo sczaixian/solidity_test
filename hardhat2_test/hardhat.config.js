@@ -1,13 +1,10 @@
 require("@nomicfoundation/hardhat-toolbox");
 
-// import { configVariable } from "hardhat/config";
-
-
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.28",
-  networks:{
-    sepolia:{
+  networks: {
+    sepolia: {
       url: "https://eth-sepolia.g.alchemy.com/v2/RmsPYhly5O6-XH8UdmqCQ",
       accounts: [
         // "decf550fcc469204df8d024977ad887c888a3164b0977f588ae645d3786b4511",
@@ -17,11 +14,10 @@ module.exports = {
       gas: "auto",
       gasPrice: "auto",
     },
-    etherscan:{
-      apikey:{
-        sepolia: "TZ1JWZAT8XK1M8V4JIVD2XJGHU93GRHQ86"
-      }
+  },
+  etherscan: {
+    apiKey: {
+      sepolia: "TZ1JWZAT8XK1M8V4JIVD2XJGHU93GRHQ86"
     }
-  
   }
 };

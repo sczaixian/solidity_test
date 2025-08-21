@@ -95,7 +95,7 @@ alchemy.com
 
 
 
-
+npm update --save-dev hardhat @nomicfoundation/hardhat-verify
 
 
 
