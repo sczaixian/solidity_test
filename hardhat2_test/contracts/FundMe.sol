@@ -19,7 +19,7 @@ contract FundMe{
     address erc20Addr;
     bool public getFundSuccess = false;  // 不写默认是false
 
-    AggregatorV3Interface internal dataFeed;
+    AggregatorV3Interface public dataFeed;
 
     modifier onlyOwner(){
         require(msg.sender == owner, "this function can only called by owner");

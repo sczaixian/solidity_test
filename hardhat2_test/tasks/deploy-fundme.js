@@ -22,4 +22,4 @@ async function verifyFundMe(fundAddr, args) {
     })
 }
 
-module.exports = {}
+module.exports = {}  // 导出

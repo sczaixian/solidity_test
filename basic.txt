@@ -103,7 +103,8 @@ npm update --save-dev hardhat @nomicfoundation/hardhat-verify
 npm install @nomiclabs/hardhat-etherscan dotenv --save-dev
 
 
-
+-D  是 --save-dev 的简写
+npm install -D hardhat-deploy
 
 
 
