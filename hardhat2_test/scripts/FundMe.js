@@ -83,11 +83,11 @@ async function main() {
 
     // 查询资金映射（如果合约中有这个方法）
     try {
-        const deployerFunds = await fundMe.funderToAmount(deployer.address);
+        const deployerFunds = await fundMe.fundersToAmount(deployer.address);
         console.log("Funds from deployer:", ethers.formatEther(deployerFunds), "ETH");
 
         if (other) {
-            const otherFunds = await fundMe.funderToAmount(other.address);
+            const otherFunds = await fundMe.fundersToAmount(other.address);
             console.log("Funds from other:", ethers.formatEther(otherFunds), "ETH");
         }
     } catch (error) {

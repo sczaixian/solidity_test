@@ -16,8 +16,13 @@ interface IMERC20 {
     function allowance(address owner, address spender) external view returns(uint256);
     // 授权三方操作一定数量的代币，不需要你确认
     function approve(address, uint256) external returns(bool);
-    // 代扣转账
+    // 代扣转账(在授权的基础上)
     function transferFrom(address,address,uint256) external returns(bool);
+    /* 可选的
+    name()      // 名字
+    symbol()    // 简称
+    decimals()  // 精度
+    */
 }
 
 contract MERC20 is IMERC20{
