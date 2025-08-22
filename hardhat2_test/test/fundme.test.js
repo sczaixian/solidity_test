@@ -1,6 +1,6 @@
 
 const { ethers, deployments, getNamedAccounts } = require("hardhat")
-const { assert } = require("chai")
+const { assert } = require("chai")  //
 const { deployConract } = require("../tasks")
 
 describe("test fundme contract", async function () {
