@@ -103,6 +103,12 @@ npm update --save-dev hardhat @nomicfoundation/hardhat-verify
 npm install @nomiclabs/hardhat-etherscan dotenv --save-dev
 
 
+运行测试 gas 消耗量
+npm install --save-dev hardhat-gas-reporter
+
+
+
+
 -D  是 --save-dev 的简写
 npm install -D hardhat-deploy
 

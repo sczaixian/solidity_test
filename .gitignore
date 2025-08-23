@@ -58,3 +58,22 @@ states/
 
 # Hardhat coverage reports
 /hardhat2_test/coverage
+
+
+
+/hardhat_kl/node_modules
+
+# Hardhat files
+/hardhat_kl/cache
+/hardhat_kl/artifacts
+
+# TypeChain files
+/hardhat_kl/typechain
+/hardhat_kl/typechain-types
+
+# solidity-coverage files
+/hardhat_kl/coverage
+/hardhat_kl/coverage.json
+
+# Hardhat Ignition default folder for deployments against a local node
+/hardhat_kl/ignition/deployments/chain-31337

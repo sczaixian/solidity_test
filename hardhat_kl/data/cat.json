@@ -1,0 +1,60 @@
+{
+    "description": "Cat english.",
+    "external_url": "https://openseacreatures.io/3",
+    "image": "https://ipfs.io/ipns/k51qzi5uqu5dgnm9b9lg8kx2ub9ibfa51cu0a9hpgr1cjyzjm82zqhhr92bvsq",
+    "name": "Cat Day",
+    "attributes": [
+        {
+            "trait_type": "Breed",
+            "value": "English Shorthair"
+        },
+        {
+            "trait_type": "Eye Color",
+            "value": "Green"
+        },
+        {
+            "trait_type": "Background",
+            "value": "IPFS Space"
+        },
+        {
+            "trait_type": "Rarity",
+            "value": "Common"
+        }
+    ]
+}
+
+
+// Owner
+// scong1968@gmail.com
+// ETag
+// d5f5f06a212de3872a86563acfd64d2a
+// Last Modified
+// 2025-08-23 05:27:47 -0400
+// Size
+// 630 Bytes
+// Key
+// cat.json
+// Status
+// Pinned
+// IPFS CID
+// QmWu2GdTQzzkP2BDbvpJfCY3eLX2goag6eVCsCFxXaejjB
+// IPFS Gateway URL
+// https://present-silver-amphibian.myfilebase.com/ipfs/QmWu2GdTQzzkP2BDbvpJfCY3eLX2goag6eVCsCFxXaejjB
+
+
+// Owner
+// scong1968@gmail.com
+// ETag
+// 3123e103c4d26cb2868b41b87bc8e1ed
+// Last Modified
+// 2025-08-23 02:23:57 -0400
+// Size
+// 6.48 KB
+// Key
+// cat.png
+// Status
+// Pinned
+// IPFS CID
+// QmUBA67N8NYeKRZH2o19ayUABBf4knwuzsfGasPzqgzdEr
+// IPFS Gateway URL
+// https://present-silver-amphibian.myfilebase.com/ipfs/QmUBA67N8NYeKRZH2o19ayUABBf4knwuzsfGasPzqgzdEr

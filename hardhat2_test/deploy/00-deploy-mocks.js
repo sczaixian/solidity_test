@@ -1,14 +1,26 @@
 
-module.exports= async({getNamedAccounts, deployments}) => {
+// const { network } = require("hardhat")
+const { DECIMAL, INITIAL_ANSWER, devlopmentChains} = require("../helper-hardhat-config")
 
-    const {firstAccount} = await getNamedAccounts()
-    const {deploy} = deployments
-    
-    await deploy("MockV3Aggregator", {
-        from: firstAccount,
-        args: [8, 300000000000],   // 3000  +  00000000  八个0 
-        log: true
-    })        
+
+module.exports= async({getNamedAccounts, deployments}) => {
+    console.log(`network.name is ${network.name}`)
+
+    if(devlopmentChains.includes(network.name)){
+        console.log("-------------------------")
+
+        const {firstAccount} = await getNamedAccounts()
+        const {deploy} = deployments
+        
+        await deploy("MockV3Aggregator", {
+            from: firstAccount,
+            args: [DECIMAL, INITIAL_ANSWER],   // 3000  +  00000000  八个0 
+            log: true
+        }) 
+    } else {
+        console.log("environment is not local, mock contract depployment is skipped")
+    }
+           
 }
 
 module.exports.tags = ["all", "mock"]
