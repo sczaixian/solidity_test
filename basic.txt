@@ -76,7 +76,7 @@ npx hardhat ignition deploy ignition/modules/Counter.ts
 
 
 
-
+npm install --save-dev hardhat-contract-sizer --legacy-peer-deps
 
 
 
