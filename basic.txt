@@ -189,6 +189,149 @@ go与 以太坊、比特币、solana这三个交互
 
 
 
+// 持币分红实现
+function distributeDividends() public {
+    uint256 contractBalance = address(this).balance;
+    for (uint256 i = 0; i < shareholders.length; i++) {
+        address shareholder = shareholders[i];
+        uint256 share = balanceOf(shareholder) * contractBalance / totalSupply();
+        payable(shareholder).transfer(share);
+    }
+}
+
+在分发以太币时使用`transfer`函数，虽然`transfer`有2300gas的限制，可以防止重入攻击
+循环次数限制：如果股东数量非常多，循环可能会消耗超过区块gas上限的gas，导致交易失败。这在Solidity中是一个常见问题，因为循环gas成本会随着循环次数增加而增加。
+状态变量修改：在循环中对外部地址进行转账操作，如果某个地址是合约地址且其fallback函数消耗大量gas，或者故意使转账失败，则会导致整个分红操作回滚。
+精度问题：在计算份额时，使用`balanceOf(shareholder) * contractBalance / totalSupply()`，如果`contractBalance`很小，而`totalSupply`很大，则可能会因为整数除法的截断导致一些股东分到的数量为0
+快照问题：这个函数没有使用快照机制，如果在分红过程中有转账操作，会导致持币比例变化，从而影响分红的公平性。
+权限控制：这个函数是`public`的，意味着任何人都可以调用它，可能会被恶意利用（例如，频繁调用消耗gas，或者在其他不合时宜的时候调用）
+
+
+
+ -------------------- 修改 使用拉取模式而不是推送模式 让股东自己领取 ----------------------
+mapping(address => uint256) public dividends;
+
+function distributeDividends() public {
+    uint256 contractBalance = address(this).balance;
+    for (uint256 i = 0; i < shareholders.length; i++) {
+        address shareholder = shareholders[i];
+        uint256 share = balanceOf(shareholder) * contractBalance / totalSupply();
+        dividends[shareholder] += share;
+    }
+}
+
+function claimDividend() public {
+    uint256 amount = dividends[msg.sender];
+    require(amount > 0, "No dividends available");
+    dividends[msg.sender] = 0;
+    payable(msg.sender).transfer(amount);
+}
+
+
+------------------- 可以采用分配发送 每一轮发多少个 -----------------
+uint256 public currentIndex;
+
+function distributeDividends(uint256 batchSize) public {
+    uint256 contractBalance = address(this).balance;
+    uint256 endIndex = Math.min(currentIndex + batchSize, shareholders.length);
+    
+    for (uint256 i = currentIndex; i < endIndex; i++) {
+        address shareholder = shareholders[i];
+        uint256 share = balanceOf(shareholder) * contractBalance / totalSupply();
+        payable(shareholder).transfer(share);
+    }
+    
+    currentIndex = endIndex;
+    if (currentIndex >= shareholders.length) {
+        currentIndex = 0; // 重置索引，完成一轮分红
+    }
+}
+
+
+
+// 在分红前先记录每个地址的余额快照
+mapping(address => uint256) public snapshotBalance;
+uint256 public snapshotTotalSupply;
+
+function takeSnapshot() public {
+    for (uint256 i = 0; i < shareholders.length; i++) {
+        address shareholder = shareholders[i];
+        snapshotBalance[shareholder] = balanceOf(shareholder);
+    }
+    snapshotTotalSupply = totalSupply();
+}
+
+
+
+
+
+
+
+
+
+----------------------- 代理合约 ----------------------------
+
+// 代理合约核心逻辑
+contract TransparentProxy {
+    address private _implementation;   //  本合约要 代理的地址
+    address private _admin;
+
+    constructor(address logic) {
+        _implementation = logic;
+        _admin = msg.sender;
+    }
+    // 当合约没有匹配到函数前面会执行这个函数
+    fallback() external payable {
+        require(msg.sender != _admin, "Admin cannot call implementation");
+        address impl = _implementation;
+        assembly {
+            // 当用户调用代理合约时， 调用中包含的说有信息被编码并存储在一个叫做 calldata 的特殊只读区域中
+            // calldatacopy(a, b, size)  从 b 位置 搬到 a 位置，总共搬 size 个
+            calldatacopy(0, 0, calldatasize())  // 将用户调用的数据复制出来
+            // delegatecall 将数据原封不动的发给 impl 
+            // let result 捕获的是 delegatecall本身执行的成功还是失败（1true；0false）
+            // let result := delegatecall(
+            //     gas(),        // 参数1: 发送的gas
+            //     impl,         // 参数2: 目标合约地址
+            //     0,            // 参数3: 输入数据在内存中的【起始偏移量】
+            //     calldatasize(), // 参数4: 输入数据的【大小】
+            //     0,            // 参数5: 输出数据在内存中的【起始偏移量】
+            //     0             // 参数6: 输出数据【预留空间的大小】
+            // )
+            let result := delegatecall(gas(), impl, 0, calldatasize(), 0, 0)
+            // 成功：返回值会被存储在 EVM 的返回数据缓冲区 (returndata buffer) 中
+            // 将缓冲区中的数据复制到内存
+            returndatacopy(0, 0, returndatasize())
+            if iszero(result) {   // 返回0表示失败
+              // 之前执行了 returndatacopy， 现在需要回滚
+              revert(0, returndatasize()) 
+            }
+            // 将内存中的返回值返回给最初调用代理合约的地址
+            return(0, returndatasize())
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
