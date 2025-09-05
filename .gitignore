@@ -77,3 +77,27 @@ states/
 
 # Hardhat Ignition default folder for deployments against a local node
 /hardhat_kl/ignition/deployments/chain-31337
+
+
+
+
+# Node modules
+/meta_token/node_modules
+
+# Compilation output
+/meta_token/dist
+
+# pnpm deploy output
+/meta_token/bundle
+
+# Hardhat Build Artifacts
+/meta_token/artifacts
+
+# Hardhat compilation (v2) support directory
+/meta_token/cache
+
+# Typechain output
+/meta_token/types
+
+# Hardhat coverage reports
+/meta_token/coverage
