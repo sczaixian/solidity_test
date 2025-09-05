@@ -108,6 +108,8 @@ npm install --save-dev hardhat-gas-reporter
 
 
 
+npm install 初始化环境 根据 package.json 生成 node_models
+
 
 -D  是 --save-dev 的简写
 npm install -D hardhat-deploy
