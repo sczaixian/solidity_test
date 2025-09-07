@@ -3,31 +3,18 @@ pragma solidity ^0.8.26;
 
 import {Context} from "./Context.sol";
 
-interface MyTokenInterface {
+interface IERC20 {
     event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
-
+    event Approval(address indexed owner, address indexed spender, uint256 value);
     function totalSupply() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);
     function transfer(address to, uint256 value) external returns (bool);
-    function allowance(
-        address owner,
-        address spender
-    ) external view returns (uint256);
-
-    function approve(address spender, uint256 value) external returns (bool);
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    ) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);  // 查询授权额度
+    function approve(address spender, uint256 value) external returns (bool);  // 授权
+    function transferFrom(address from, address to, uint256 value) external returns (bool); // 从授权地址转账
 }
 
-contract MyToken is MyTokenInterface, Context {
+contract ERC20 is IERC20, Context {
     string private _name;
     string private _symbol;
     uint8 private constant _decimals = 18;
@@ -54,7 +41,7 @@ contract MyToken is MyTokenInterface, Context {
         return _balances[account];
     }
 
-    function transfer(address to, uint256 value) public returns (bool) {
+    function transfer(address to, uint256 value) public virtual returns (bool) {
         address owner = _messageSender();
         _transfer(owner, to, value);
         return true;
@@ -125,6 +112,13 @@ contract MyToken is MyTokenInterface, Context {
             }
         }
         emit Transfer(from, to, value);
+    }
+
+    function _mint(address account, uint256 value) internal {
+        if (account == address(0)) {
+            // revert ERC20InvalidReceiver(address(0));
+        }
+        _update(address(0), account, value);
     }
 
     function _spendAllowance(address owner, address spender, uint256 value) internal virtual {
