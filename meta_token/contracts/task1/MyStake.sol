@@ -106,6 +106,18 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     function initialize(IERC20 _MetaNode, uint256 _startBlock, uint256 _endBlock, uint256 _MetaNodePerBlock) public initializer {
         require(_startBlock <= _endBlock && _MetaNodePerBlock > 0, "invalid parameters!!");
         __AccessControl_init();
@@ -144,6 +156,15 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
 
         uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
         totalPoolWeight = totalPoolWeight + _poolWeight;
+        
+        pool.push(
+            Pool({
+                stTokenAddress: _stTokenAddress,poolWeight: _poolWeight,
+                lastRewardBlock: lastRewardBlock, accMetaNodePerST: 0,
+                stTokenAmount: 0, minDepositAmount: _minDepositAmount,
+                unstakeLockedBlocks: _unstakeLockedBlocks
+            })
+        );
 
         emit AddPool(_stTokenAddress, _poolWeight, lastRewardBlock, _minDepositAmount, _unstakeLockedBlocks);
     }
@@ -153,6 +174,22 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         for(uint256 pid = 0; pid < length; pid++){
             updatePool(pid);
         }
+    }
+
+    function updatePool(uint256 _pid, uint256 _minDepositAmount, uint256 _unstakeLockedBlocks) public onlyRole(ADMIN_ROLE) checkPid(_pid){
+        pool[_pid].minDepositAmount = _minDepositAmount;
+        pool[_pid].unstakeLockedBlocks = _unstakeLockedBlocks;
+        emit UpdatePoolInfo(_pid, _minDepositAmount, _unstakeLockedBlocks);
+    }
+
+    function setPoolWeight(uint256 _pid, uint256 _poolWeight, bool _withUpdate) public onlyRole(ADMIN_ROLE) checkPid(_pid) {
+        require(_poolWeight > 0, "invalid pool weight");
+        if(_withUpdate){
+            massUpdatePools();
+        }
+        totalPoolWeight = totalPoolWeight - pool[_pid].poolWeight + _poolWeight;
+        pool[_pid].poolWeight = _poolWeight;
+        emit SetPoolWeight(_pid, _poolWeight, totalPoolWeight);
     }
 
     function updatePool(uint256 _pid) public checkPid(_pid){
@@ -183,6 +220,14 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         emit UpdatePool(_pid, pool_.lastRewardBlock, totalMetaNode);
     }
 
+
+
+
+
+
+
+
+
     function getMultiplier(uint256 _from, uint256 _to) public view returns(uint256 multiplier) {
         require(_from <= _to, "invalid block");
         if(_from < startBlock) { _from = startBlock; }
@@ -196,8 +241,65 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
 
 
 
+    function poolLength() external view returns(uint256){
+        return pool.length;
+    }
 
 
+    function pendingMetaNode(uint256 _pid, address _user) external checkPid(_pid) view returns(uint256) {
+        return pendingMetaNodeByBlockNumber(_pid, _user, block.number);
+    }
+
+    function pendingMetaNodeByBlockNumber(uint256 _pid, address _user, uint256 _blockNumber) public checkPid(_pid) view returns(uint256) {
+        Pool storage pool_ = pool[_pid];
+        User storage user_ = user[_pid][_user];
+        uint256 accMetaNodePerST = pool_.accMetaNodePerST;
+        uint256 stSupply = pool_.stTokenAmount;
+        if(_blockNumber > pool_.lastRewardBlock && stSupply != 0){
+            uint256 multiplier = getMultiplier(pool_.lastRewardBlock, _blockNumber);
+            uint256 MetaNodeForPool = multiplier * pool_.poolWeight / totalPoolWeight;
+            accMetaNodePerST = accMetaNodePerST + MetaNodeForPool * (1 ether) / stSupply;
+        }
+        return user_.stAmount * accMetaNodePerST / (1 ether) - user_.finishedMetaNode + user_.pendingMetaNode;
+    }
+
+
+    function stakingBalance(uint256 _pid, address _user) external checkPid(_pid) view returns(uint256) {
+        return user[_pid][_user].stAmount;
+    }
+
+    function withdrawAmount(uint256 _pid, address _user) public checkPid(_pid) view returns(uint256 requestAmount, uint256 pendingWithdrawAmount) {
+        User storage user_ = user[_pid][_user];
+        for(uint256 i = 0; i < user_.requests.length; i++){
+            if(user_.requests[i].unlockBlocks <= block.number){
+                pendingWithdrawAmount = pendingWithdrawAmount + user_.requests[i].amount;
+            }
+            requestAmount = requestAmount + user_.requests[i].amount;
+        }
+    }
+
+
+    funciton depositEth() public whenNotPaused() payable {
+        Pool storage pool_ = pool[ETH_PID];
+        require(pool_.stTokenAddress == address(0), "invalid staking token address");
+        uint256 _amount = msg.value;
+        require(_amount >= pool_.minDepositAmount, "deposit amount is too small");
+        _deposit(ETH_PID, _amount);
+    }
+
+    function deposit(uint256 _pid, uint256 _amount) public whenNotPaused() checkPid(_pid) {
+        require(_pid != 0, "deposit not support ETH staking");
+        Pool storage pool_ = pool[_pid];
+        require(_amount > pool_.minDepositAmount, "deposit amount is too small");
+        if(_amount > 0){
+            IERC20(pool_.stTokenAddress).safeTransferFrom(msg.sender, address(this), _amount);
+        }
+        _deposit(_pid, _amount);
+    }
+
+    function unstake(uint256 _pid, uint256 _amount) public whenNotPaused() checkPid(_pid) whenNotWithdrawPaused() {
+        
+    }
 
 
 
