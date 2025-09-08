@@ -11,6 +11,11 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
+
+/* 
+  用户 质押了 币 A  --> 
+*/
+
 contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessControlUpgradeable {
 
     using SafeERC20 for IERC20;
@@ -42,7 +47,7 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
     struct User{
         uint256 stAmount;            // 用户质押的代币数量
         uint256 finishedMetaNode;    // 已分配的 MetaNode 数量
-        uint256 pendingMetaNode;     // 待领取的 MetaNode 数量
+        uint256 pendingMetaNode;     // 待领取的 MetaNode 数量，收益的token数量
         UnstakeRequest[] requests;   // 解质押请求列表，每个请求包含解质押数量和解锁区块。
     }
 
@@ -141,7 +146,8 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
 
     function _authorizeUpgrade(address newImplementation) internal onlyRole(UPGRADE_ROLE) override {}
 
-    function addPool(address _stTokenAddress, uint256 _poolWeight, uint256 _minDepositAmount, uint256 _unstakeLockedBlocks, bool _withUpdate) public onlyRole(ADMIN_ROLE) {
+    function addPool(address _stTokenAddress, uint256 _poolWeight, uint256 _minDepositAmount, 
+                                              uint256 _unstakeLockedBlocks, bool _withUpdate) public onlyRole(ADMIN_ROLE) {
         if(pool.length > 0){
             require(_stTokenAddress != address(0), "invalid staking token address");
         } else{
@@ -278,8 +284,8 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         }
     }
 
-
-    funciton depositEth() public whenNotPaused() payable {
+    // 质押ETH
+    function depositEth() public whenNotPaused() payable {
         Pool storage pool_ = pool[ETH_PID];
         require(pool_.stTokenAddress == address(0), "invalid staking token address");
         uint256 _amount = msg.value;
@@ -287,6 +293,7 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         _deposit(ETH_PID, _amount);
     }
 
+    // 质押其他代币
     function deposit(uint256 _pid, uint256 _amount) public whenNotPaused() checkPid(_pid) {
         require(_pid != 0, "deposit not support ETH staking");
         Pool storage pool_ = pool[_pid];
@@ -297,20 +304,147 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         _deposit(_pid, _amount);
     }
 
+    // 解锁函数
     function unstake(uint256 _pid, uint256 _amount) public whenNotPaused() checkPid(_pid) whenNotWithdrawPaused() {
-        
+        Pool storage pool_ = pool[_pid];
+        User storage user_ = user[_pid][msg.sender];
+        require(user_.stAmount >= _amount, "Not enough staking token balance");
+
+        updatePool(_pid);
+
+        uint256 pendingMetaNode_ = user_.stAmount * pool_.accMetaNodePerST / (1 ether) - user_.finishedMetaNode;
+
+        if(pendingMetaNode_ > 0) {
+            user_.pendingMetaNode = user_.pendingMetaNode + pendingMetaNode_;
+        }
+
+        if(_amount > 0) {
+            user_.stAmount = user_.stAmount - _amount;
+            user_.requests.push(UnstakeRequest({
+                amount: _amount,
+                unlockBlocks: block.number + pool_.unstakeLockedBlocks
+            }));
+        }
+
+        pool_.stTokenAmount = pool_.stTokenAmount - _amount;
+        user_.finishedMetaNode = user_.stAmount * pool_.accMetaNodePerST / (1 ether);
+
+        emit RequestUnstake(msg.sender, _pid, _amount);
+    }
+
+    // 提取已解锁的代币
+    function withdraw(uint256 _pid) public whenNotPaused() checkPid(_pid) whenNotWithdrawPaused() {
+        Pool storage pool_ = pool[_pid];
+        User storage user_ = user[_pid][msg.sender];
+
+        uint256 pendingWithdraw_;
+        uint256 popNum_;
+        for(uint256 i = 0; i < user_.requests.length; i++){
+            if(user_.requests[i].unlockBlocks > block.number){
+                break;
+            }
+            pendingWithdraw_ = pendingWithdraw_ + user_.requests[i].amount;
+            popNum_++;
+        }
+        for(uint256 i = 0; i < user_.requests.length - popNum_; i++){
+            user_.requests[i] = user_.requests[i + popNum_];
+        }
+
+        for(uint256 i = 0; i < popNum_; i++){
+            user_.requests.pop();
+        }
+
+        if(pendingWithdraw_ > 0){
+            if(pool_.stTokenAddress == address(0)){
+                _safeETHTransfer(msg.sender, pendingWithdraw_);
+            }else{
+                IERC20(pool_.stTokenAddress).safeTransfer(msg.sender, pendingWithdraw_);
+            }   
+        }
+        emit Withdraw(msg.sender, _pid, pendingWithdraw_, block.number);
+    }
+
+    // 领取MetaNode奖励
+    function claim(uint256 _pid) public whenNotPaused() checkPid(_pid) whenNotClaimPaused() {
+        Pool storage pool_ = pool[_pid];
+        User storage user_ = user[_pid][msg.sender];
+        updatePool(_pid);
+        uint256 pendingMetaNode_ = user_.stAmount * pool_.accMetaNodePerST / (1 ether) - user_.finishedMetaNode + user_.pendingMetaNode;
+        if(pendingMetaNode_ > 0){
+            user_.pendingMetaNode = 0;
+            _safeMetaNodeTransfer(msg.sender, pendingMetaNode_);
+        }
+        // 有可能会缩水
+        user_.finishedMetaNode = user_.stAmount * pool_.accMetaNodePerST / (1 ether);
+        emit Claim(msg.sender, _pid, pendingMetaNode_);
+    }
+
+    function _deposit(uint256 _pid, uint256 _amount) internal {
+        Pool storage pool_ = pool[_pid];
+        User storage user_ = user[_pid][msg.sender];
+        updatePool(_pid);
+
+        if (user_.stAmount > 0) {
+            (bool success1, uint256 accST) = user_.stAmount.tryMul(pool_.accMetaNodePerST);  // 总共可以得到token
+            require(success1, "user stAmount mul accMetaNodePerST overflow");
+            (success1, accST) = accST.tryDiv(1 ether);  // 单位统一
+            require(success1, "accST div 1 ether overflow");
+            
+            (bool success2, uint256 pendingMetaNode_) = accST.trySub(user_.finishedMetaNode);
+            require(success2, "accST sub finishedMetaNode overflow");
+
+            if(pendingMetaNode_ > 0) {
+                // 上次质押到当前时刻（这次操作）过程中产生的收益
+                (bool success3, uint256 _pendingMetaNode) = user_.pendingMetaNode.tryAdd(pendingMetaNode_);
+                require(success3, "user pendingMetaNode overflow");
+                user_.pendingMetaNode = _pendingMetaNode;
+            }
+        }
+
+        if(_amount > 0) {
+            (bool success4, uint256 stAmount) = user_.stAmount.tryAdd(_amount);
+            require(success4, "user stAmount overflow");
+            user_.stAmount = stAmount;
+        }
+
+        (bool success5, uint256 stTokenAmount) = pool_.stTokenAmount.tryAdd(_amount);
+        require(success5, "pool stTokenAmount overflow");
+        pool_.stTokenAmount = stTokenAmount;
+
+        // user_.finishedMetaNode = user_.stAmount.mulDiv(pool_.accMetaNodePerST, 1 ether);
+        (bool success6, uint256 finishedMetaNode) = user_.stAmount.tryMul(pool_.accMetaNodePerST);
+        require(success6, "user stAmount mul accMetaNodePerST overflow");
+
+        (success6, finishedMetaNode) = finishedMetaNode.tryDiv(1 ether);
+        require(success6, "finishedMetaNode div 1 ether overflow");
+
+        user_.finishedMetaNode = finishedMetaNode;  // 直接把状态修改
+
+        emit Deposit(msg.sender, _pid, _amount);
     }
 
 
+    // 安全转移代币
+    function _safeMetaNodeTransfer(address _to, uint256 _amount) internal {
+        uint256 MetaNodeBal = MetaNode.balanceOf(address(this));
 
+        if (_amount > MetaNodeBal) {
+            MetaNode.transfer(_to, MetaNodeBal);
+        } else {
+            MetaNode.transfer(_to, _amount);
+        }
+    }
 
-
-
-
-
-
-
-
+    // 安全转移ETH
+    function _safeETHTransfer(address _to, uint256 _amount) internal {
+        (bool success, bytes memory data) = address(_to).call{ value: _amount }("");
+        require(success, "ETH transfer call failed");
+        // 对于普通的 ETH 转账（使用 call 且不带数据），接收合约不应该返回任何数据。
+        // 大多数合约的 receive() 或 fallback() 函数不会返回数据，因此这个检查通常是多余的，甚至可能导致问题。
+        if (data.length > 0) {
+            require(abi.decode(data, (bool)), "ETH transfer operation did not succeed");
+        }
+    }
 
 
 
