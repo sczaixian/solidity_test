@@ -7,14 +7,14 @@ interface ISwapRouter is ISwapCallback {
     event Swap(address indexed sender,bool zeroForOne,uint256 amountIn,uint256 amountInRemaining,uint256 amountOut);
 
     struct ExactInputParams {
-        address tokenIn;
-        address tokenOut;
+        address tokenIn;       // 输入代币地址
+        address tokenOut;      // 输出代币地址
         uint32[] indexPath;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-        uint160 sqrtPriceLimitX96;
+        address recipient;     // 接收者地址
+        uint256 deadline;      // 过期的区块号
+        uint256 amountIn;      // 输入代币数量
+        uint256 amountOutMinimum;   // 最少输出代币数量
+        uint160 sqrtPriceLimitX96;  // 限定价格，值为0则不限价
     }
 
     function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);

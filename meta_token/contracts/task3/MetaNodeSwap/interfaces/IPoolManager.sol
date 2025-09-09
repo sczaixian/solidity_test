@@ -11,7 +11,7 @@ interface IPoolManageer is IFactory{
         uint32 index;
         uint24 fee;
         uint8 feeProtocol;
-        int24 tickLower;
+        int24 tickLower;   // 流动性区间下界
         int24 tickUpper;
         int24 tick;
         uint160 sqrtPriceX96;
