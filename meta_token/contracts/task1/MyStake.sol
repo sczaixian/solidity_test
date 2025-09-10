@@ -14,6 +14,13 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 /* 
   用户 质押了 币 A  --> 
+  Initializable: 提供了初始化函数的功能，确保合约的初始化逻辑只能执行一次。
+  UUPSUpgradeable: UUPS 升级模式,升级逻辑放在实现合约中，而不是代理合约中
+  PausableUpgradeable: 提供了暂停和恢复合约功能的机制,当合约遇到紧急情况或需要维护时，所有者可以暂停大部分功能(可升级版本的 Pausable)
+  AccessControlUpgradeable: 基于角色的权限控制系统(可升级版本的 AccessControl)
+
+  SafeERC20: 为 ERC20 代币操作提供了额外的安全性,函数会检查代币合约的返回值，确保操作成功
+  
 */
 
 contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessControlUpgradeable {
