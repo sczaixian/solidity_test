@@ -20,42 +20,26 @@ contract Pool is IPool {
     using LowGasSafeMath for int256;
     using LowGasSafeMath for uint256;
 
-    /// @inheritdoc IPool
     address public immutable override factory;
-    /// @inheritdoc IPool
     address public immutable override token0;
-    /// @inheritdoc IPool
     address public immutable override token1;
-    /// @inheritdoc IPool
     uint24 public immutable override fee;
-    /// @inheritdoc IPool
     int24 public immutable override tickLower;
-    /// @inheritdoc IPool
     int24 public immutable override tickUpper;
 
-    /// @inheritdoc IPool
     uint160 public override sqrtPriceX96;
-    /// @inheritdoc IPool
     int24 public override tick;
-    /// @inheritdoc IPool
     uint128 public override liquidity;
 
-    /// @inheritdoc IPool
     uint256 public override feeGrowthGlobal0X128;
-    /// @inheritdoc IPool
     uint256 public override feeGrowthGlobal1X128;
 
     struct Position {
-        // 该 Position 拥有的流动性
-        uint128 liquidity;
-        // 可提取的 token0 数量
-        uint128 tokensOwed0;
-        // 可提取的 token1 数量
-        uint128 tokensOwed1;
-        // 上次提取手续费时的 feeGrowthGlobal0X128
-        uint256 feeGrowthInside0LastX128;
-        // 上次提取手续费是的 feeGrowthGlobal1X128
-        uint256 feeGrowthInside1LastX128;
+        uint128 liquidity;            // 该 Position 拥有的流动性
+        uint128 tokensOwed0;          // 可提取的 token0 数量
+        uint128 tokensOwed1;          // 可提取的 token1 数量
+        uint256 feeGrowthInside0LastX128;    // 上次提取手续费时的 feeGrowthGlobal0X128
+        uint256 feeGrowthInside1LastX128;    // 上次提取手续费是的 feeGrowthGlobal1X128
     }
 
     // 用一个 mapping 来存放所有 Position 的信息
