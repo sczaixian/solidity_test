@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
-contract TMyStake is Initializable, UUPSUpgradeable, AccessControlUpgradeable, PausableUpgradeable {
+contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, AccessControlUpgradeable{
     using SafeERC20 for IERC20;
     using Address for address;
     using Math for uint256;
@@ -73,22 +73,35 @@ contract TMyStake is Initializable, UUPSUpgradeable, AccessControlUpgradeable, P
     }
 
     event SetMetaNode(IERC20 indexed MetaNode);
+    event PauseWithdraw();
+    event UnpauseWithdraw();
+    event PauseClaim();
+    event UnpauseClaim();
+    event SetStartBlock(uint256 startBlock_);
+    event SetEndBlock(uint256 endBlock_);
+    event SetMetaNodePerBlock(uint256 MetaNodePerBlock_);
+    event SetPoolWeight(uint256 indexed poolId, uint256 indexed poolWeight, uint256 totalPoolWeight);
     event AddPool(address stTokenAddress_, uint256 poolWeight_, uint256 minDepositAmount_, uint256 unstakeLockedBlocks_);
+    event UpdatePool(uint256 indexed poolId, uint256 indexed lastRewardBlock, uint256 totalMetaNode);
 
-    function initialize (IERC20 MetaNode_, uint256 startBlock_, uint256 endBlock_, uint256 MetaNodePerBlock_) public initializer {
-        require(startBlock_ < endBlock_ && MetaNodePerBlock_ > 0, "");
+    function initialize(IERC20 _MetaNode, uint256 _startBlock, uint256 _endBlock, uint256 _MetaNodePerBlock) public initializer {
+        require(_startBlock <= _endBlock && _MetaNodePerBlock > 0, "invalid parameters");
+
         __AccessControl_init();
         __UUPSUpgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(UPGRADE_ROLE, msg.sender);
-        grantRole(ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
 
-        setMetaNode(MetaNode_);
+        setMetaNode(_MetaNode);
 
-        startBlock = startBlock_;
-        endBlock = endBlock_;
-        MetaNodePerBlock = MetaNodePerBlock_;
+        startBlock = _startBlock;
+        endBlock = _endBlock;
+        MetaNodePerBlock = _MetaNodePerBlock;
+
     }
+    // 必须要实现
+    function _authorizeUpgrade(address newImplementation) internal onlyRole(UPGRADE_ROLE) override { }
 
     function setMetaNode(IERC20 MetaNode_) public onlyRole(ADMIN_ROLE) {
         MetaNode = MetaNode_;
@@ -148,7 +161,12 @@ contract TMyStake is Initializable, UUPSUpgradeable, AccessControlUpgradeable, P
             require(success2, "overflow");
             (success2, totalMetaNode_) = totalMetaNode_.tryDiv(stSupply);
             require(success2, "overflow");
+            (bool success3, uint256 accMetaNodePerST_) = pool_.accMetaTokenPerST.tryAdd(totalMetaNode_);
+            require(success3, "");
+            pool_.accMetaTokenPerST = accMetaNodePerST_;
         }
+        pool_.lastRewardBlock = block.number;
+        emit UpdatePool(pid_, pool_.lastRewardBlock, totalMetaNode);
 
     }
 
@@ -162,4 +180,96 @@ contract TMyStake is Initializable, UUPSUpgradeable, AccessControlUpgradeable, P
         require(success, "");
     }
 
+    function pauseWithdraw() public onlyRole(ADMIN_ROLE) {
+        require(!withdrawPaused, "");
+        withdrawPaused = true;
+        emit PauseWithdraw();
+    }
+
+    function unpauseWithdraw() public onlyRole(ADMIN_ROLE) {
+        require(withdrawPaused, "");
+        withdrawPaused = false;
+        emit UnpauseWithdraw();
+    }
+
+    function pauseClaim() public onlyRole(ADMIN_ROLE){
+        require(!claimPaused, "");
+        claimPaused = true;
+        emit PauseClaim();
+    }
+
+    function unpauseClaim() public onlyRole(ADMIN_ROLE){
+        require(claimPaused, "");
+        claimPaused = false;
+        emit UnpauseClaim();
+    }
+
+    function setStartBlock(uint256 startBlock_) public onlyRole(ADMIN_ROLE) {
+        require(startBlock_ <= endBlock, "");
+        startBlock = startBlock_;
+        emit SetStartBlock(startBlock_);
+    }
+
+    function setEndBlock(uint256 endBlock_) public onlyRole(ADMIN_ROLE) {
+        require(startBlock <= endBlock_, "");
+        endBlock = endBlock_;
+        emit SetEndBlock(endBlock_);
+    }
+
+    function setMetaNodePerBlock(uint256 MetaNodePerBlock_) public onlyRole(ADMIN_ROLE){
+        require(MetaNodePerBlock_ > 0, "");
+        MetaNodePerBlock = MetaNodePerBlock_;
+        emit SetMetaNodePerBlock(MetaNodePerBlock_);
+    }
+
+    function updatePool(uint256 pid_, uint256 minDepositAmount_, uint256 unstakeLockedBlocks_) public onlyRole(ADMIN_ROLE) checkPid(pid_){
+        pool[pid_].minDepositAmount = minDepositAmount_;
+        pool[pid_].unstakeLockedBlocks = unstakeLockedBlocks_;
+        emit UpdatePool(pid_, minDepositAmount_, unstakeLockedBlocks_);
+    }
+
+    function setPoolWeight(uint256 pid_, uint256 poolWeight_, bool withUpdate_) public onlyRole(ADMIN_ROLE) checkPid(pid_){
+        require(poolWeight_ > 0, "");
+        if(withUpdate_){
+            massUpdatePools();
+        }
+        totalPoolWeight = totalPoolWeight - pool[pid_].poolWeight + poolWeight_;
+        pool[pid_].poolWeight = poolWeight_;
+        emit SetPoolWeight(pid_, poolWeight_, totalPoolWeight);
+    }
+
+    function poolLength() external view returns(uint256){
+        return pool.length;
+    }
+
+    function pendingMetaNode(uint256 pid_, address user_) external checkPid(pid_) view returns(uint256){
+        return pendingMetaNodeByBlockNumber(pid_, user_, block.number);
+    }
+
+    function pendingMetaNodeByBlockNumber(uint256 pid_, address user_, uint256 blockNumber_) public checkPid(pid_) view returns(uint256){
+        Pool storage pool_ = pool[pid_];
+        User storage _user = user[pid_][user_];
+        uint256 accMetaNodePerST = pool_.accMetaTokenPerST;
+        uint256 stSupply = pool_.stTokenAmount;
+        if(blockNumber_ > pool_.lastRewardBlock && stSupply != 0){
+            uint256 multiplier = getMultiplier(pool_.lastRewardBlock, blockNumber_);
+            uint256 MetaNodeForPool = multiplier * pool_.poolWeight / totalPoolWeight;
+            accMetaNodePerST = accMetaNodePerST + MetaNodeForPool * (1 ether) / stSupply;
+        }
+        return _user.stAmount * accMetaNodePerST / (1 ether) - _user.finishedMetaNode + _user.pendingMetaNode;
+    }
+
+    function stakingBalance(uint256 pid_, address user_) external checkPid(pid_) view returns(uint256){
+        return user[pid_][user_].stAmount;
+    }
+
+    function withDrawAmount(uint256 pid_, address user_) public checkPid(pid_) view returns(uint256 requestAmount, uint256 pendingWithdrawAmount){
+        User storage _user = user[pid_][user_];
+        for(uint256 i = 0; i < _user.requests.length; i++){
+            if(_user.requests[i].unLockBlocks < block.number){
+                pendingWithdrawAmount = pendingWithdrawAmount + _user.requests[i].amount;
+            }
+            requestAmount = requestAmount + _user.requests[i].amount;
+        }
+    }
 }
