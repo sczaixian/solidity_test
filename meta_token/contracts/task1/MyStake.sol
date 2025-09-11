@@ -155,6 +155,9 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
 
     function addPool(address _stTokenAddress, uint256 _poolWeight, uint256 _minDepositAmount, 
                                               uint256 _unstakeLockedBlocks, bool _withUpdate) public onlyRole(ADMIN_ROLE) {
+        /*
+            第一个 pool 必须是 eth
+        */
         if(pool.length > 0){
             require(_stTokenAddress != address(0), "invalid staking token address");
         } else{

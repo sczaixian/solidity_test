@@ -134,7 +134,7 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
             minDepositAmount: minDepositAmount_,
             unstakeLockedBlocks: unstakeLockedBlocks_}));
         
-        AddPool(stTokenAddress_, poolWeight_, minDepositAmount_, unstakeLockedBlocks_);
+        emit AddPool(stTokenAddress_, poolWeight_, minDepositAmount_, unstakeLockedBlocks_);
     }
 
     function massUpdatePools() public {
@@ -145,6 +145,12 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
     }
 
     function updatePool(uint256 pid_) public checkPid(pid_){
+        /**
+            判断有没有可以更新的块
+            如果有计算 需要更新
+            总token、每个token分发的 metanode、最后发奖励块、增加事件
+
+         */
         Pool storage pool_ = pool[pid_];
         if(pool_.lastRewardBlock > block.number){
             return;
@@ -171,6 +177,9 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
     }
 
     function getMultiplier(uint256 from_, uint256 to_) public view returns(uint256 multiplier){
+        /**
+            计算多个块的奖励总和
+         */
         require(from_ < to_, "");
         if(from_ < startBlock){ from_ = startBlock; }
         if(to_ > endBlock) { to_ = endBlock; }
@@ -179,7 +188,11 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
         (success, multiplier) = (to_ - from_).tryMul(MetaNodePerBlock);
         require(success, "");
     }
-
+    /**
+        暂停、放开 领取奖励、提款
+        设置开始和结束块
+        设置 每个 eth 折算多少个 token
+     */
     function pauseWithdraw() public onlyRole(ADMIN_ROLE) {
         require(!withdrawPaused, "");
         withdrawPaused = true;
@@ -228,6 +241,9 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
         emit UpdatePool(pid_, minDepositAmount_, unstakeLockedBlocks_);
     }
 
+    /**
+        设置池子的权重
+     */
     function setPoolWeight(uint256 pid_, uint256 poolWeight_, bool withUpdate_) public onlyRole(ADMIN_ROLE) checkPid(pid_){
         require(poolWeight_ > 0, "");
         if(withUpdate_){
@@ -246,7 +262,11 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
         return pendingMetaNodeByBlockNumber(pid_, user_, block.number);
     }
 
-    function pendingMetaNodeByBlockNumber(uint256 pid_, address user_, uint256 blockNumber_) public checkPid(pid_) view returns(uint256){
+    /**
+        传入区块 得到 还没领取奖励的metanode数量
+     */
+    function pendingMetaNodeByBlockNumber(uint256 pid_, address user_, uint256 blockNumber_) 
+                                                    public checkPid(pid_) view returns(uint256){
         Pool storage pool_ = pool[pid_];
         User storage _user = user[pid_][user_];
         uint256 accMetaNodePerST = pool_.accMetaTokenPerST;
@@ -263,7 +283,11 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
         return user[pid_][user_].stAmount;
     }
 
-    function withDrawAmount(uint256 pid_, address user_) public checkPid(pid_) view returns(uint256 requestAmount, uint256 pendingWithdrawAmount){
+    /**
+        查询 某个池子中 用户所有  解锁但是没有提取的总额
+     */
+    function withDrawAmount(uint256 pid_, address user_) 
+            public checkPid(pid_) view returns(uint256 requestAmount, uint256 pendingWithdrawAmount){
         User storage _user = user[pid_][user_];
         for(uint256 i = 0; i < _user.requests.length; i++){
             if(_user.requests[i].unLockBlocks < block.number){
@@ -271,5 +295,18 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
             }
             requestAmount = requestAmount + _user.requests[i].amount;
         }
+    }
+    // ETH 与 ERC20 的表示方式不同
+    function depositETH() public whenNotPaused() payable {
+        /**
+            先判断 是不是eth
+            判断是不是 符合最小质押要求
+            传给底层函数计算
+         */
+    }
+
+    
+    function deposit(uint256 _pid, uint256 _amount) public whenNotPaused() checkPid(_pid) {
+
     }
 }
