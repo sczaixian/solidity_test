@@ -270,9 +270,9 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         Pool storage pool_ = pool[_pid];
         User storage user_ = user[_pid][_user];
         uint256 accMetaNodePerST = pool_.accMetaNodePerST;
-        uint256 stSupply = pool_.stTokenAmount;
+        uint256 stSupply = pool_.stTokenAmount;     // 多次读取 翻到临时变量节省gase
         if(_blockNumber > pool_.lastRewardBlock && stSupply != 0){
-            uint256 multiplier = getMultiplier(pool_.lastRewardBlock, _blockNumber);
+            uint256 multiplier = getMultiplier(pool_.lastRewardBlock, _blockNumber);   // pool_.lastRewardBlock 让代码逻辑清晰？
             uint256 MetaNodeForPool = multiplier * pool_.poolWeight / totalPoolWeight;
             accMetaNodePerST = accMetaNodePerST + MetaNodeForPool * (1 ether) / stSupply;
         }
