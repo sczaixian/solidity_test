@@ -39,15 +39,19 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         address stTokenAddress;       // 质押代币的地址
         uint256 poolWeight;           // 质押池的权重，影响奖励分配。
         uint256 lastRewardBlock;      // 最后一次计算奖励的区块号。
+        // 从该资金池创建开始，到现在这个时间点，池子中每 1 个质押代币 总共可以兑换多少枚 MetaNode 奖励。
+        // 为了更精确地计算小数奖励，这个值被放大了 10^18（即 1 ether）倍
+        // accMetaNodePerST 的新值 = accMetaNodePerST 的旧值 + (本轮新增的总奖励 * 1e18) / 当前池子的总质押量
         uint256 accMetaNodePerST;     // 每个质押代币累积的 MetaNode 数量。
         uint256 stTokenAmount;        // 池中的总质押代币量
         uint256 minDepositAmount;     // 最小质押金额。
+        // 用户发起提取（Unstake）请求后，需要等待多少个以太坊区块确认后，才能实际将资金提走。
         uint256 unstakeLockedBlocks;  // 解除质押的锁定区块数
     }
 
     // 记录用户取消质押的请求信息
     struct UnstakeRequest{
-        uint256 amount;        // 请求提取的金额
+        uint256 amount;        // 请求提取的金额（原始质押的token或者coin）
         uint256 unlockBlocks;  // 解锁时间点
     }
 
@@ -64,8 +68,7 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
     // 这个区块之后，不再产生新的奖励。用户可能仍然可以提取资产，但不再累积奖励
     uint256 public endBlock;    // 质押池结束发放奖励的结束区块高度
 
-    // 它表示整个质押池系统在每个区块中分配给所有池的总奖励量。奖励根据池的权重（pool weight）分配給各个池
-    uint256 public MetaNodePerBlock;  // 每个区块分发的MetaNode代币数量
+    uint256 public MetaNodePerBlock;  // 每产出一个区块分发的MetaNode代币数量
 
     // 用于禁用提取功能。如果设置为true，用户无法从质押池中提取他们的质押资产。这通常用于紧急情况或维护。
     bool public withdrawPaused;  // 暂停开关
@@ -209,6 +212,7 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
     }
 
     function updatePool(uint256 _pid) public checkPid(_pid){
+        // 就是更新每个池子的 分红数 和 计算完后最后的奖励块
         Pool storage pool_ = pool[_pid];
         if(block.number <= pool_.lastRewardBlock){
             return;
@@ -250,7 +254,7 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         if(_to > endBlock) { _to = endBlock; }
         require(_from <= _to, "end block must be greater than start block");
         bool success;
-        (success, multiplier) = (_to - _from).tryDiv(MetaNodePerBlock);
+        (success, multiplier) = (_to - _from).tryMul(MetaNodePerBlock);
         require(success, "multiplier overflow");
     }
 
@@ -314,8 +318,9 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         _deposit(_pid, _amount);
     }
 
-    // 解锁函数
+    // 解除质押
     function unstake(uint256 _pid, uint256 _amount) public whenNotPaused() checkPid(_pid) whenNotWithdrawPaused() {
+        // 更新池子、更新用户的奖励和finish数、新增加一个request
         Pool storage pool_ = pool[_pid];
         User storage user_ = user[_pid][msg.sender];
         require(user_.stAmount >= _amount, "Not enough staking token balance");
@@ -384,7 +389,6 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
             user_.pendingMetaNode = 0;
             _safeMetaNodeTransfer(msg.sender, pendingMetaNode_);
         }
-        // 有可能会缩水
         user_.finishedMetaNode = user_.stAmount * pool_.accMetaNodePerST / (1 ether);
         emit Claim(msg.sender, _pid, pendingMetaNode_);
     }
@@ -436,6 +440,10 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
 
     // 安全转移代币
     function _safeMetaNodeTransfer(address _to, uint256 _amount) internal {
+        // 对于 ERC20 transfer()：其 Gas 成本是相对固定和可预测的。
+        // 通过指定 2300 Gas，可以有效防止重入攻击。
+        // 因为 2300 Gas 只够执行一个日志记录（Log），
+        // 远远不足以让接收合约再回调（re-entering）你的合约或执行其他复杂操作。这是一种重要的安全设计。
         uint256 MetaNodeBal = MetaNode.balanceOf(address(this));
 
         if (_amount > MetaNodeBal) {
@@ -447,6 +455,9 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
 
     // 安全转移ETH
     function _safeETHTransfer(address _to, uint256 _amount) internal {
+        // EIP-1884 导致的 Gas 成本变化，使得 2300 Gas 可能不足以完成一次转账，即使用户只是发送到一个普通的钱包地址
+        // 如果接收地址是一个合约（Contract Address），它需要足够的 Gas 来执行它的 receive() 或 fallback() 函数
+        // 如果接收地址是一个外部账户（EOA - 普通人用的钱包地址），转账只需要 21000 Gas，但你不一定能准确预测
         (bool success, bytes memory data) = address(_to).call{ value: _amount }("");
         require(success, "ETH transfer call failed");
         // 对于普通的 ETH 转账（使用 call 且不带数据），接收合约不应该返回任何数据。
