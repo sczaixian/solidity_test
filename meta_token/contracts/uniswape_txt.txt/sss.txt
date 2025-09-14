@@ -1,0 +1,75 @@
+
+
+
+
+feeGrowth (费用增长)
+在 Uniswap V3 中，交易者支付 0.05%、0.30% 或 1% 的费用，这些费用会分配给该交易价格区间内的流动性提供者。
+
+
+
+Inside (内部):  
+表示我们关注的是某一个特定价格区间内部发生的费用。Uniswap V3 的流动性是离散分布的，
+费用也只累加在正在被使用的价格区间内。这个值对于每个不同的头寸和价格区间都是独特的
+
+
+
+Last (上一次):
+表明这个值是一个“快照”，记录的是上一次操作时的全局状态。它作为基准点，用于计算从上次操作到现在，这个头寸应得的新增费用。
+
+
+
+
+AMM（自动化做市商）机制
+将传统金融中的“订单簿”模式转变为由算法和资金池驱动的“流动性池”模式
+
+使用数学算法来为资产定价和提供交易流动性
+
+
+由一个预先注资的流动性池（Liquidity Pool） 和一个定价公式来自动、无需许可地执行所有交易。
+
+
+流动性提供者（LP）必须提供“等值”的两种币
+
+
+-------------------------- 可以转换为 address 类型 -------------------------------
+
+// 合约定义
+contract MyContract {}
+
+// 转换为address
+MyContract c = new MyContract();
+address addr = address(c);
+
+
+
+// 整数类型（uint160）
+uint160 value = 123456789;
+address addr = address(value);
+
+
+// 地址字面量
+address addr = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
+
+
+
+
+
+address(new Pool{salt: salt}())表达式用于
+使用CREATE2操作码部署一个新合约
+通过指定的salt值确定合约地址
+将新部署的合约实例转换为address类型
+注意：使用CREATE2可以通过salt预先计算合约地址，这对于状态通道和链下交易等应用非常有用
+
+
+// 计算CREATE2地址的Solidity代码
+function computeAddress(bytes32 salt, bytes32 bytecodeHash) public view returns (address) {
+	return address(
+  		uint160(
+  			uint256(
+    			keccak256(
+    				abi.encodePacked(bytes1(0xff), address(this), salt, bytecodeHash)
+    			)
+  			)
+  		)
+  	);
+}
