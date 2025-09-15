@@ -63,17 +63,8 @@ contract Pool is IPool {
 
     function getPosition(
         address owner
-    )
-        external
-        view
-        override
-        returns (
-            uint128 _liquidity,
-            uint256 feeGrowthInside0LastX128,
-            uint256 feeGrowthInside1LastX128,
-            uint128 tokensOwed0,
-            uint128 tokensOwed1
-        )
+    ) external view override
+        returns ( uint128 _liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1 )
     {
         return (
             positions[owner].liquidity,
@@ -89,19 +80,14 @@ contract Pool is IPool {
         // Factory 创建 Pool 时会通 new Pool{salt: salt}() 的方式创建 Pool 合约，通过 salt 指定 Pool 的地址，这样其他地方也可以推算出 Pool 的地址
         // 参数通过读取 Factory 合约的 parameters 获取
         // 不通过构造函数传入，因为 CREATE2 会根据 initcode 计算出新地址（new_address = hash(0xFF, sender, salt, bytecode)），带上参数就不能计算出稳定的地址了
-        (factory, token0, token1, tickLower, tickUpper, fee) = IFactory(
-            msg.sender
-        ).parameters();
+        (factory, token0, token1, tickLower, tickUpper, fee) = IFactory(msg.sender).parameters();
     }
 
     function initialize(uint160 sqrtPriceX96_) external override {
         require(sqrtPriceX96 == 0, "INITIALIZED");
         // 通过价格获取 tick，判断 tick 是否在 tickLower 和 tickUpper 之间
         tick = TickMath.getTickAtSqrtPrice(sqrtPriceX96_);
-        require(
-            tick >= tickLower && tick < tickUpper,
-            "sqrtPriceX96 should be within the range of [tickLower, tickUpper)"
-        );
+        require(tick >= tickLower && tick < tickUpper, "sqrtPriceX96 should be within the range of [tickLower, tickUpper)");
         // 初始化 Pool 的 sqrtPriceX96
         sqrtPriceX96 = sqrtPriceX96_;
     }
@@ -113,39 +99,21 @@ contract Pool is IPool {
         int128 liquidityDelta;
     }
 
-    function _modifyPosition(
-        ModifyPositionParams memory params
-    ) private returns (int256 amount0, int256 amount1) {
+    function _modifyPosition(ModifyPositionParams memory params) private returns (int256 amount0, int256 amount1) {
         // 通过新增的流动性计算 amount0 和 amount1
         // 参考 UniswapV3 的代码
 
-        amount0 = SqrtPriceMath.getAmount0Delta(
-            sqrtPriceX96,
-            TickMath.getSqrtPriceAtTick(tickUpper),
-            params.liquidityDelta
-        );
+        amount0 = SqrtPriceMath.getAmount0Delta( sqrtPriceX96, TickMath.getSqrtPriceAtTick(tickUpper), params.liquidityDelta);
 
-        amount1 = SqrtPriceMath.getAmount1Delta(
-            TickMath.getSqrtPriceAtTick(tickLower),
-            sqrtPriceX96,
-            params.liquidityDelta
-        );
+        amount1 = SqrtPriceMath.getAmount1Delta( TickMath.getSqrtPriceAtTick(tickLower), sqrtPriceX96, params.liquidityDelta);
         Position storage position = positions[params.owner];
 
         // 提取手续费，计算从上一次提取到当前的手续费
         uint128 tokensOwed0 = uint128(
-            FullMath.mulDiv(
-                feeGrowthGlobal0X128 - position.feeGrowthInside0LastX128,
-                position.liquidity,
-                FixedPoint128.Q128
-            )
+            FullMath.mulDiv( feeGrowthGlobal0X128 - position.feeGrowthInside0LastX128, position.liquidity, FixedPoint128.Q128 )
         );
         uint128 tokensOwed1 = uint128(
-            FullMath.mulDiv(
-                feeGrowthGlobal1X128 - position.feeGrowthInside1LastX128,
-                position.liquidity,
-                FixedPoint128.Q128
-            )
+            FullMath.mulDiv(feeGrowthGlobal1X128 - position.feeGrowthInside1LastX128, position.liquidity, FixedPoint128.Q128)
         );
 
         // 更新提取手续费的记录，同步到当前最新的 feeGrowthGlobal0X128，代表都提取完了
@@ -160,10 +128,7 @@ contract Pool is IPool {
 
         // 修改 liquidity
         liquidity = LiquidityMath.addDelta(liquidity, params.liquidityDelta);
-        position.liquidity = LiquidityMath.addDelta(
-            position.liquidity,
-            params.liquidityDelta
-        );
+        position.liquidity = LiquidityMath.addDelta( position.liquidity, params.liquidityDelta );
     }
 
     /// @dev Get the pool's balance of token0
@@ -181,25 +146,19 @@ contract Pool is IPool {
     /// @dev This function is gas optimized to avoid a redundant extcodesize check in addition to the returndatasize
     /// check
     function balance1() private view returns (uint256) {
-        (bool success, bytes memory data) = token1.staticcall(
-            abi.encodeWithSelector(IERC20.balanceOf.selector, address(this))
-        );
+        // staticcall 安全地​​读取​​其他合约的状态，而​​不会修改​​任何区块链上的数据（状态）
+        // 查询 this  在  token1 中的balance
+        (bool success, bytes memory data) = token1.staticcall(abi.encodeWithSelector(IERC20.balanceOf.selector, address(this)));
         require(success && data.length >= 32);
         return abi.decode(data, (uint256));
     }
 
-    function mint(
-        address recipient,
-        uint128 amount,
-        bytes calldata data
-    ) external override returns (uint256 amount0, uint256 amount1) {
+    // 充值
+    function mint(address recipient,uint128 amount,bytes calldata data) external override returns (uint256 amount0, uint256 amount1) {
         require(amount > 0, "Mint amount must be greater than 0");
         // 基于 amount 计算出当前需要多少 amount0 和 amount1
         (int256 amount0Int, int256 amount1Int) = _modifyPosition(
-            ModifyPositionParams({
-                owner: recipient,
-                liquidityDelta: int128(amount)
-            })
+            ModifyPositionParams({owner: recipient,liquidityDelta: int128(amount)})
         );
         amount0 = uint256(amount0Int);
         amount1 = uint256(amount1Int);
@@ -208,9 +167,10 @@ contract Pool is IPool {
         uint256 balance1Before;
         if (amount0 > 0) balance0Before = balance0();
         if (amount1 > 0) balance1Before = balance1();
-        // 回调 mintCallback
-        IMintCallback(msg.sender).mintCallback(amount0, amount1, data);
 
+        // “回调”或“钩子”（hook）机制 回调 mintCallback  只要实现了 mintCallback 就能调用
+        IMintCallback(msg.sender).mintCallback(amount0, amount1, data);
+        //  确保交易正确，
         if (amount0 > 0)
             require(balance0Before.add(amount0) <= balance0(), "M0");
         if (amount1 > 0)
@@ -219,26 +179,19 @@ contract Pool is IPool {
         emit Mint(msg.sender, recipient, amount, amount0, amount1);
     }
 
-    function collect(
-        address recipient,
-        uint128 amount0Requested,
-        uint128 amount1Requested
-    ) external override returns (uint128 amount0, uint128 amount1) {
+    function collect(address recipient,uint128 amount0Requested,uint128 amount1Requested) external override returns (uint128 amount0, uint128 amount1) {
         // 获取当前用户的 position
         Position storage position = positions[msg.sender];
 
         // 把钱退给用户 recipient
-        amount0 = amount0Requested > position.tokensOwed0
-            ? position.tokensOwed0
-            : amount0Requested;
-        amount1 = amount1Requested > position.tokensOwed1
-            ? position.tokensOwed1
-            : amount1Requested;
+        amount0 = amount0Requested > position.tokensOwed0 ? position.tokensOwed0 : amount0Requested;
+        amount1 = amount1Requested > position.tokensOwed1 ? position.tokensOwed1 : amount1Requested;
 
         if (amount0 > 0) {
             position.tokensOwed0 -= amount0;
             TransferHelper.safeTransfer(token0, recipient, amount0);
         }
+
         if (amount1 > 0) {
             position.tokensOwed1 -= amount1;
             TransferHelper.safeTransfer(token1, recipient, amount1);
@@ -247,14 +200,9 @@ contract Pool is IPool {
         emit Collect(msg.sender, recipient, amount0, amount1);
     }
 
-    function burn(
-        uint128 amount
-    ) external override returns (uint256 amount0, uint256 amount1) {
+    function burn( uint128 amount ) external override returns (uint256 amount0, uint256 amount1) {
         require(amount > 0, "Burn amount must be greater than 0");
-        require(
-            amount <= positions[msg.sender].liquidity,
-            "Burn amount exceeds liquidity"
-        );
+        require(amount <= positions[msg.sender].liquidity, "Burn amount exceeds liquidity");
         // 修改 positions 中的信息
         (int256 amount0Int, int256 amount1Int) = _modifyPosition(
             ModifyPositionParams({
@@ -268,11 +216,9 @@ contract Pool is IPool {
 
         if (amount0 > 0 || amount1 > 0) {
             (
-                positions[msg.sender].tokensOwed0,
-                positions[msg.sender].tokensOwed1
+                positions[msg.sender].tokensOwed0, positions[msg.sender].tokensOwed1  // 更新用户待领取的余额
             ) = (
-                positions[msg.sender].tokensOwed0 + uint128(amount0),
-                positions[msg.sender].tokensOwed1 + uint128(amount1)
+                positions[msg.sender].tokensOwed0 + uint128(amount0), positions[msg.sender].tokensOwed1 + uint128(amount1)
             );
         }
 

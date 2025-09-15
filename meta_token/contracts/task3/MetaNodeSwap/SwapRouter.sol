@@ -15,9 +15,7 @@ contract SwapRouter is ISwapRouter {
     }
 
     /// @dev Parses a revert reason that should contain the numeric quote
-    function parseRevertReason(
-        bytes memory reason
-    ) private pure returns (int256, int256) {
+    function parseRevertReason(bytes memory reason) private pure returns (int256, int256) {
         if (reason.length != 64) {
             if (reason.length < 68) revert("Unexpected error");
             assembly {
@@ -28,32 +26,16 @@ contract SwapRouter is ISwapRouter {
         return abi.decode(reason, (int256, int256));
     }
 
-    function swapInPool(
-        IPool pool,
-        address recipient,
-        bool zeroForOne,
-        int256 amountSpecified,
-        uint160 sqrtPriceLimitX96,
-        bytes calldata data
-    ) external returns (int256 amount0, int256 amount1) {
-        try
-            pool.swap(
-                recipient,
-                zeroForOne,
-                amountSpecified,
-                sqrtPriceLimitX96,
-                data
-            )
-        returns (int256 _amount0, int256 _amount1) {
+    function swapInPool(IPool pool,address recipient,bool zeroForOne,int256 amountSpecified,uint160 sqrtPriceLimitX96,bytes calldata data
+                                        ) external returns (int256 amount0, int256 amount1) {
+        try pool.swap( recipient, zeroForOne, amountSpecified, sqrtPriceLimitX96, data) returns (int256 _amount0, int256 _amount1) {
             return (_amount0, _amount1);
         } catch (bytes memory reason) {
             return parseRevertReason(reason);
         }
     }
 
-    function exactInput(
-        ExactInputParams calldata params
-    ) external payable override returns (uint256 amountOut) {
+    function exactInput(ExactInputParams calldata params ) external payable override returns (uint256 amountOut) {
         // 记录确定的输入 token 的 amount
         uint256 amountIn = params.amountIn;
 
@@ -219,22 +201,15 @@ contract SwapRouter is ISwapRouter {
             );
     }
 
-    function swapCallback(
-        int256 amount0Delta,
-        int256 amount1Delta,
-        bytes calldata data
-    ) external override {
+    function swapCallback( int256 amount0Delta, int256 amount1Delta, bytes calldata data ) external override {
         // transfer token
-        (address tokenIn, address tokenOut, uint32 index, address payer) = abi
-            .decode(data, (address, address, uint32, address));
+        (address tokenIn, address tokenOut, uint32 index, address payer) = abi.decode(data, (address, address, uint32, address));
         address _pool = poolManager.getPool(tokenIn, tokenOut, index);
 
         // 检查 callback 的合约地址是否是 Pool
         require(_pool == msg.sender, "Invalid callback caller");
 
-        uint256 amountToPay = amount0Delta > 0
-            ? uint256(amount0Delta)
-            : uint256(amount1Delta);
+        uint256 amountToPay = amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
         // payer 是 address(0)，这是一个用于预估 token 的请求（quoteExactInput or quoteExactOutput）
         // 参考代码 https://github.com/Uniswap/v3-periphery/blob/main/contracts/lens/Quoter.sol#L38
         if (payer == address(0)) {

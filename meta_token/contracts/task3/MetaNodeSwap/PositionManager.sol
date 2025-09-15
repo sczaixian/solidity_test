@@ -27,12 +27,7 @@ contract PositionManager is IPositionManager, ERC721 {
     mapping(uint256 => PositionInfo) public positions;
 
     // 获取全部的 Position 信息
-    function getAllPositions()
-        external
-        view
-        override
-        returns (PositionInfo[] memory positionInfo)
-    {
+    function getAllPositions() external view override returns (PositionInfo[] memory positionInfo) {
         positionInfo = new PositionInfo[](_nextId - 1);
         for (uint32 i = 0; i < _nextId - 1; i++) {
             positionInfo[i] = positions[i + 1];
@@ -53,20 +48,8 @@ contract PositionManager is IPositionManager, ERC721 {
         _;
     }
 
-    function mint(
-        MintParams calldata params
-    )
-        external
-        payable
-        override
-        checkDeadline(params.deadline)
-        returns (
-            uint256 positionId,
-            uint128 liquidity,
-            uint256 amount0,
-            uint256 amount1
-        )
-    {
+    function mint( MintParams calldata params ) external payable override checkDeadline(params.deadline) 
+                                    returns ( uint256 positionId, uint128 liquidity, uint256 amount0, uint256 amount1 ) {
         // mint 一个 NFT 作为 position 发给 LP
         // NFT 的 tokenId 就是 positionId
         // 通过 MintParams 里面的 token0 和 token1 以及 index 获取对应的 Pool
@@ -94,12 +77,7 @@ contract PositionManager is IPositionManager, ERC721 {
 
         // data 是 mint 后回调 PositionManager 会额外带的数据
         // 需要 PoistionManger 实现回调，在回调中给 Pool 打钱
-        bytes memory data = abi.encode(
-            params.token0,
-            params.token1,
-            params.index,
-            msg.sender
-        );
+        bytes memory data = abi.encode( params.token0, params.token1, params.index, msg.sender );
 
         (amount0, amount1) = pool.mint(address(this), liquidity, data);
 
@@ -136,14 +114,7 @@ contract PositionManager is IPositionManager, ERC721 {
         _;
     }
 
-    function burn(
-        uint256 positionId
-    )
-        external
-        override
-        isAuthorizedForToken(positionId)
-        returns (uint256 amount0, uint256 amount1)
-    {
+    function burn( uint256 positionId ) external override isAuthorizedForToken(positionId) returns (uint256 amount0, uint256 amount1) {
         PositionInfo storage position = positions[positionId];
         // 通过 isAuthorizedForToken 检查 positionId 是否有权限
         // 移除流动性，但是 token 还是保留在 pool 中，需要再调用 collect 方法才能取回 token
@@ -195,15 +166,7 @@ contract PositionManager is IPositionManager, ERC721 {
         position.liquidity = 0;
     }
 
-    function collect(
-        uint256 positionId,
-        address recipient
-    )
-        external
-        override
-        isAuthorizedForToken(positionId)
-        returns (uint256 amount0, uint256 amount1)
-    {
+    function collect( uint256 positionId, address recipient ) external override isAuthorizedForToken(positionId) returns (uint256 amount0, uint256 amount1) {
         // 通过 isAuthorizedForToken 检查 positionId 是否有权限
         // 调用 Pool 的方法给 LP 退流动性
         PositionInfo storage position = positions[positionId];
@@ -228,14 +191,9 @@ contract PositionManager is IPositionManager, ERC721 {
         }
     }
 
-    function mintCallback(
-        uint256 amount0,
-        uint256 amount1,
-        bytes calldata data
-    ) external override {
+    function mintCallback( uint256 amount0, uint256 amount1, bytes calldata data ) external override {
         // 检查 callback 的合约地址是否是 Pool
-        (address token0, address token1, uint32 index, address payer) = abi
-            .decode(data, (address, address, uint32, address));
+        (address token0, address token1, uint32 index, address payer) = abi.decode(data, (address, address, uint32, address));
         address _pool = poolManager.getPool(token0, token1, index);
         require(_pool == msg.sender, "Invalid callback caller");
 

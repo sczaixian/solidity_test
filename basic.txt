@@ -502,7 +502,7 @@ address addr = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
 
 
 
-
+CREATE2 它允许您根据  部署者控制的参数（加盐） 将智能合约部署到确定性地址。
 
 address(new Pool{salt: salt}())表达式用于
 使用CREATE2操作码部署一个新合约
