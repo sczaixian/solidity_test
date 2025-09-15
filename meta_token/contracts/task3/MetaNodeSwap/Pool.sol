@@ -21,6 +21,7 @@ contract Pool is IPool {
     using LowGasSafeMath for uint256;
 
     address public immutable override factory;
+    // 流动性提供者（LP）必须提供“等值”的两种币
     address public immutable override token0;
     address public immutable override token1;
     uint24 public immutable override fee;
@@ -30,7 +31,22 @@ contract Pool is IPool {
     uint160 public override sqrtPriceX96;
     int24 public override tick;
     uint128 public override liquidity;
+    /**
+    feeGrowth (费用增长)
+    在 Uniswap V3 中，交易者支付 0.05%、0.30% 或 1% 的费用，这些费用会分配给该交易价格区间内的流动性提供者。
 
+    Inside (内部):  
+    表示我们关注的是某一个特定价格区间内部发生的费用。Uniswap V3 的流动性是离散分布的，
+    费用也只累加在正在被使用的价格区间内。这个值对于每个不同的头寸和价格区间都是独特的
+
+    Last (上一次):
+    表明这个值是一个“快照”，记录的是上一次操作时的全局状态。它作为基准点，用于计算从上次操作到现在，这个头寸应得的新增费用。
+
+    AMM（自动化做市商）机制
+    将传统金融中的“订单簿”模式转变为由算法和资金池驱动的“流动性池”模式
+    使用数学算法来为资产定价和提供交易流动性
+    由一个预先注资的流动性池（Liquidity Pool） 和一个定价公式来自动、无需许可地执行所有交易。
+    */
     uint256 public override feeGrowthGlobal0X128;
     uint256 public override feeGrowthGlobal1X128;
 

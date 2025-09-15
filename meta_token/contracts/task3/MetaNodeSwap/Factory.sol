@@ -24,34 +24,12 @@ contract Factory is IFactory {
      */
     Parameters public override parameters;
 
-    /**
-     * @notice 对两个代币地址进行排序
-     * @dev 确保token0总是小于token1，避免重复创建相同代币对的池
-     * @param tokenA 第一个代币地址
-     * @param tokenB 第二个代币地址
-     * @return token0 排序后较小的代币地址
-     * @return token1 排序后较大的代币地址
-     */
-    function sortToken(
-        address tokenA,
-        address tokenB
-    ) private pure returns (address, address) {
+    function sortToken(address tokenA,address tokenB) private pure returns (address, address) {
         return tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
     }
 
-    /**
-     * @notice 根据代币对和索引获取池地址
-     * @dev 查询指定代币对在特定索引位置的池合约地址
-     * @param tokenA 第一个代币地址
-     * @param tokenB 第二个代币地址
-     * @param index 池在数组中的索引位置
-     * @return 池合约地址，如果不存在则返回零地址
-     */
-    function getPool(
-        address tokenA,
-        address tokenB,
-        uint32 index
-    ) external view override returns (address) {
+
+    function getPool( address tokenA,address tokenB,uint32 index) external view override returns (address) {
         // 验证参数有效性
         require(tokenA != tokenB, "IDENTICAL_ADDRESSES");
         require(tokenA != address(0) && tokenB != address(0), "ZERO_ADDRESS");
@@ -67,39 +45,15 @@ contract Factory is IFactory {
         return pools[token0][token1][index];
     }
 
-    /*
-     * @notice 创建新的流动性池
-     * @dev 如果相同参数的池已存在，则返回现有池地址；否则创建新池
-     * @param tokenA 第一个代币地址
-     * @param tokenB 第二个代币地址
-     * @param tickLower 价格区间下限（以tick为单位）
-     * @param tickUpper 价格区间上限（以tick为单位）
-     * @param fee 交易手续费率（以基点表示）
-     * @return pool 新创建或已存在的池合约地址
-     * 
-     * @解析 函数执行流程：
-     * 1. 参数验证：确保代币地址有效且不相同
-     * 2. 代币排序：确保token0 < token1
-     * 3. 检查现有池：遍历现有池，如果找到相同参数的池则直接返回
-     * 4. 创建新池：使用CREATE2部署新池合约
-     * 5. 存储池地址：将新池地址添加到映射中
-     * 6. 触发事件：通知外部观察者池已创建
-     */
     function createPool(
-        address tokenA,
-        address tokenB,
-        int24 tickLower,
-        int24 tickUpper,
-        uint24 fee
-    ) external override returns (address pool) {
-        // 验证代币地址不能相同
-        require(tokenA != tokenB, "IDENTICAL_ADDRESSES");
+        address tokenA,address tokenB,
+        int24 tickLower,int24 tickUpper,
+        uint24 fee) external override returns (address pool) {
 
-        // 声明变量
+
+        require(tokenA != tokenB, "IDENTICAL_ADDRESSES");
         address token0;
         address token1;
-
-        // 对代币地址进行排序（确保一致性）
         (token0, token1) = sortToken(tokenA, tokenB);
 
         // 获取该代币对的所有现有池

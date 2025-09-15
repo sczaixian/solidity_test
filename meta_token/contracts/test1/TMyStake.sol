@@ -211,14 +211,22 @@ contract TMetaNode is Initializable, UUPSUpgradeable,PausableUpgradeable, Access
     }
 
     function depositETH() public whenNotPaused() payable {
-        Pool storage _pool = pool[ETH_PID];
-        require(_pool.stTokenAddress == address(0), "");
+        Pool storage pool_ = pool[ETH_PID];
+        require(pool_.stTokenAddress == address(0), "");
         uint256 amount = msg.value;
-        require(amount > _pool.minDepositAmount, "");
+        require(amount >= pool_.minDepositAmount, "");
         _deposit(ETH_PID, amount);
     }
 
+    function deposit(uint256 pid_, uint256 amount_) public whenNotPaused() checkPoolId(pid_) {
+        require(pid_ != ETH_PID, "");
+        Pool storage _pool = pool[pid_];
+        require(_pool.stTokenAddress != address(0), "");
+        require(_pool.minDepositAmount <= amount_, "");
+        IERC20(_pool.stTokenAddress).safeTransferFrom(msg.sender, address(this), amount_);
+    }
+
     function _deposit(uint256 pid_, uint256 value_) internal {
-        
+
     }
 }

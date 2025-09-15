@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
  * @title 铸造回调接口
  * @notice 在铸造流动性时，池合约会调用此接口进行代币转账
  */
-interface IMintCallbacks {
+interface IMintCallback {
     /**
      * @notice 铸造回调函数
      * @dev 当用户铸造流动性时，池合约会调用此函数要求用户支付相应的代币
@@ -37,41 +37,11 @@ interface ISwapCallback {
  */
 interface IPool {
     // ============================ 视图函数 ============================
-    
-    /**
-     * @notice 获取工厂合约地址
-     * @return 工厂合约地址
-     */
     function factory() external view returns(address);
-    
-    /**
-     * @notice 获取第一种代币地址
-     * @return token0地址
-     */
     function token0() external view returns(address);
-    
-    /**
-     * @notice 获取第二种代币地址
-     * @return token1地址
-     */
     function token1() external view returns(address);
-    
-    /**
-     * @notice 获取交易手续费率
-     * @return 手续费率（以基点表示，如3000表示0.3%）
-     */
     function fee() external view returns(uint24);
-    
-    /**
-     * @notice 获取价格区间下限
-     * @return 价格区间下限的tick值
-     */
     function tickLower() external view returns(int24);
-    
-    /**
-     * @notice 获取价格区间上限
-     * @return 价格区间上限的tick值
-     */
     function tickUpper() external view returns(int24);
     
     /**
@@ -80,16 +50,7 @@ interface IPool {
      */
     function sqrtPriceX96() external view returns(uint160);
     
-    /**
-     * @notice 获取当前价格对应的tick值
-     * @return 当前tick值
-     */
     function tick() external view returns(int24);
-    
-    /**
-     * @notice 获取当前池中的总流动性
-     * @return 流动性数量
-     */
     function liquidity() external view returns(uint128);
     
     /**
@@ -159,18 +120,12 @@ interface IPool {
      * @return amount1 应返还的token1数量
      */
     function burn(uint128 amount) external returns(uint256 amount0, uint256 amount1);
-    
-    /**
-     * @notice 执行代币交换
-     * @dev 执行token0和token1之间的交换，会调用swapCallback进行代币支付
-     * @param recipient 交换收益接收地址
-     * @param zeroForOne 交换方向：true表示用token0交换token1，false表示用token1交换token0
-     * @param amountSpecified 指定输入/输出数量（正数表示精确输入，负数表示精确输出）
-     * @param data 回调时传递的附加数据
-     * @return amount0 token0的数量变化
-     * @return amount1 token1的数量变化
-     */
-    function swap(address recipient, bool zeroForOne, int256 amountSpecified, bytes calldata data) external returns(int256 amount0, int256 amount1);
+
+
+    function swap(
+        address recipient, bool zeroForOne,
+        int256 amountSpecified, uint160 sqrtPriceLimitX96, bytes calldata data
+    ) external returns (int256 amount0, int256 amount1);   
 
     // ============================ 事件 ============================
     
@@ -212,5 +167,9 @@ interface IPool {
      * @param liquidity 交换后的流动性数量
      * @param tick 交换后的tick值
      */
-    event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick);
+    event Swap(
+        address indexed sender, address indexed recipient, 
+        int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick);
+
+        
 }

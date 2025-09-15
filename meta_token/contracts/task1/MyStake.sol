@@ -20,7 +20,8 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
   AccessControlUpgradeable: 基于角色的权限控制系统(可升级版本的 AccessControl)
 
   SafeERC20: 为 ERC20 代币操作提供了额外的安全性,函数会检查代币合约的返回值，确保操作成功
-  
+
+  不会增加 你的 质押代币，会给平台币， 平台币可以通过 cex 交易转换成 ustd ， 然后 ustd 转变成法币
 */
 
 contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessControlUpgradeable {
@@ -119,18 +120,6 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         require(!withdrawPaused, "withdraw is paused");
         _;
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     function initialize(IERC20 _MetaNode, uint256 _startBlock, uint256 _endBlock, uint256 _MetaNodePerBlock) public initializer {
@@ -300,6 +289,9 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
 
     // 质押ETH
     function depositEth() public whenNotPaused() payable {
+        // 当调用 payable函数并附带 value时，ETH 就已经自动转移到合约了
+        // Solidity 运行时环境会自动处理这个转账
+        // address(this).balance 
         Pool storage pool_ = pool[ETH_PID];
         require(pool_.stTokenAddress == address(0), "invalid staking token address");
         uint256 _amount = msg.value;
@@ -313,6 +305,7 @@ contract MyStake is Initializable, UUPSUpgradeable, PausableUpgradeable, AccessC
         Pool storage pool_ = pool[_pid];
         require(_amount > pool_.minDepositAmount, "deposit amount is too small");
         if(_amount > 0){
+            // 转账
             IERC20(pool_.stTokenAddress).safeTransferFrom(msg.sender, address(this), _amount);
         }
         _deposit(_pid, _amount);

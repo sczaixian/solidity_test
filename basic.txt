@@ -481,6 +481,48 @@ contract MyToken is UUPSUpgradeable {  // 要升级的合约集成
 
 
 
+-------------------------- 可以转换为 address 类型 -------------------------------
+
+// 合约定义
+contract MyContract {}
+
+// 转换为address
+MyContract c = new MyContract();
+address addr = address(c);
+
+
+
+// 整数类型（uint160）
+uint160 value = 123456789;
+address addr = address(value);
+
+
+// 地址字面量
+address addr = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
+
+
+
+
+
+address(new Pool{salt: salt}())表达式用于
+使用CREATE2操作码部署一个新合约
+通过指定的salt值确定合约地址
+将新部署的合约实例转换为address类型
+注意：使用CREATE2可以通过salt预先计算合约地址，这对于状态通道和链下交易等应用非常有用
+
+
+// 计算CREATE2地址的Solidity代码
+function computeAddress(bytes32 salt, bytes32 bytecodeHash) public view returns (address) {
+	return address(
+  		uint160(
+  			uint256(
+    			keccak256(
+    				abi.encodePacked(bytes1(0xff), address(this), salt, bytecodeHash)
+    			)
+  			)
+  		)
+  	);
+}
 
 
 

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+
+import { IFactory } from "./IFactory.sol";
+
 /**
  * @title 池管理器接口
  * @notice 该接口继承自IFactory，提供池的创建、查询和管理功能
