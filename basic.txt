@@ -598,7 +598,7 @@ NetworkRequestError: A network request failed. This is an error from the block e
 
 
 
-------------------------------------------------------------------------------------
+---------------------------------- pledge --------------------------------------------------
 PS D:\web3_porjs\pledge\pledgev2> npx hardhat run scripts/deploy/multiSignature.js --network sepolia
 Deploying contracts with the account: 0x3E0bDb54f94D735dDCf8D2074c852a8C22914aA7
 Account balance: 3533590637853159752
@@ -631,3 +631,30 @@ PS D:\web3_porjs\pledge\pledgev2> npx hardhat run scripts/deploy/pledgePool.js -
 Deploying contracts with the account: 0x3E0bDb54f94D735dDCf8D2074c852a8C22914aA7
 Account balance: 3533578144983471160
 pledgeAddress address: 0x5ad3AfddAaE25fdC2D85A3aC607D444F1c515f05
+
+
+
+
+pnpm install ajv@7.2.3 ajv-formats@2.1.1 --save-dev
+
+
+
+---------------pledge\pledge-fe\src\utils\getTokenList.ts-------------
+import { TokenList } from '@uniswap/token-lists'
+import schema from '@uniswap/token-lists/src/tokenlist.schema.json'
+import Ajv from 'ajv'
+import contenthashToUri from './contenthashToUri'
+import { parseENSAddress } from './parseENSAddress'
+import uriToHttp from './uriToHttp'
+import addFormats from 'ajv-formats'
+
+// bakeryswap defaultTokenJson
+import { DEFAULT_TOKEN_LIST_URL } from '../constants/lists'
+import defaultTokenJson from '../constants/token/pancakeswap.json'
+
+// 创建 Ajv 实例
+const ajv = new Ajv({ allErrors: true })
+// 使用 addFormats 来扩展这个实例，使其支持格式验证（如 date-time 等）
+addFormats(ajv)
+// 然后编译 schema
+const tokenListValidator = ajv.compile(schema)
