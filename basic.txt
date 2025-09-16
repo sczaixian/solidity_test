@@ -585,3 +585,49 @@ NetworkRequestError: A network request failed. This is an error from the block e
     at main (D:\web3_porjs\solidity_test\hardhat2_test\scripts\FundMe.js:23:5)
 
 把 clash 中的 tun 模式开启就好了
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------------------------
+PS D:\web3_porjs\pledge\pledgev2> npx hardhat run scripts/deploy/multiSignature.js --network sepolia
+Deploying contracts with the account: 0x3E0bDb54f94D735dDCf8D2074c852a8C22914aA7
+Account balance: 3533590637853159752
+multiSignature address: 0xf2870D6cd715F1b7EfeDbABC26564b41c043F3ef
+
+
+
+let multiSignatureAddress = ["0x3E0bDb54f94D735dDCf8D2074c852a8C22914aA7",
+                            "0xd96AF416b2060500f828A3f31e617F15CBEA1e4b",
+                            "0x1984EE3bCE0c863d24905dF9D54322856e54CCea"];
+
+
+
+PS D:\web3_porjs\pledge\pledgev2> npx hardhat run scripts/deploy/debtToken.js --network sepolia
+Deploying contracts with the account: 0x3E0bDb54f94D735dDCf8D2074c852a8C22914aA7
+Account balance: 3533589615997684278
+DebtToken address: 0x46E6B2F8aBDD166F1B293d5A30CC1Ec5578E85e6                            
+
+
+
+
+PS D:\web3_porjs\pledge\pledgev2> npx hardhat run scripts/deploy/swapRouter.js --network sepolia
+router 0xF56B74461BAf8b92A6a63D8e163ae409913Da237
+factory 0xCc65694dC4D5084A609Be51004Cd3f75ef50bC9B
+
+
+
+
+PS D:\web3_porjs\pledge\pledgev2> npx hardhat run scripts/deploy/pledgePool.js --network sepolia
+Deploying contracts with the account: 0x3E0bDb54f94D735dDCf8D2074c852a8C22914aA7
+Account balance: 3533578144983471160
+pledgeAddress address: 0x5ad3AfddAaE25fdC2D85A3aC607D444F1c515f05
