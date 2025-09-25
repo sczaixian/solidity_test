@@ -115,7 +115,7 @@ contract MemeToken is Initializable, UUPSUpgradeable, PausableUpgradeable, Acces
     event FundedETH(address indexed sender, uint256 amount);
     event FundedToken(address indexed token, address indexed sender, uint256 amount);
     event SetFeedPrice(address indexed accAddress, address indexed feedAddress);
-
+    event StakeToken(address indexed tokenAddr, uint256 indexed amount);
 
 
     function initialize(IERC20 _memeToken, uint256 _traTax, uint256 _recvTax, 
@@ -151,18 +151,38 @@ contract MemeToken is Initializable, UUPSUpgradeable, PausableUpgradeable, Acces
         require(success, "");
         (success, _amount) = amount.tryMul(_amount);  // 计算得到代币数量
         require(success, "");
-        DepositRecord[] storage _dr = _user.dr[tokenAddr];
+        _mergeDeposit(tokenAddr);
+        _user.dr[tokenAddr].push(
+            DepositRecord({
+                amount: memAmount, 
+                unblockNum: block.number + unlockBlocks
+            })
+        );
+        _pool.amount = _pool.amount + memAmount;
+        emit StakeToken(tokenAddr, amount);
+    }
 
-        if (_dr.length > 0) {
-            _dr.push(
-                DepositRecord({
-                    amount: memAmount, 
-                    unblockNum: block.number + unlockBlocks
-                })
-            );
-        } else {
-            
+    // 将可以提款的节点合并，后面寻找只需要找节点0就行
+    function _mergeDeposit(address tokenAddr) internal {
+        DepositRecord[] storage _dr = userDeposits[msg.sender].dr[tokenAddr];
+        uint256 idx = 0;
+        uint256 amountCount;
+        for(uint256 i = 0; i < _dr.length; i++ ){
+            if (_dr[i].unblockNum > block.number){
+                break;
+            }
+            amountCount = amountCount + _dr[i].amount;
+            idx++;
         }
+        for(uint256 i = 1; i < _dr.length - idx; i++){
+            _dr[i ] = _dr[i + idx];
+        }
+
+        for(uint256 i = 0; i < idx; i++){
+            _dr.pop();
+        }
+
+        _dr[0].amount = amountCount;
     }
 
 
@@ -175,13 +195,21 @@ contract MemeToken is Initializable, UUPSUpgradeable, PausableUpgradeable, Acces
             require(success, "transfer failed");
             emit FundedETH(msg.sender, msg.value);
         }else{
-            IERC20(feedAddr).safeTransfer(msg.sender, amount);
-            emit FundedToken(feedAddr, msg.sender, amount);
+            
         }
     }
 
 
     function transfer(address to, uint256 value) public override returns (bool){
+        require(to != address(0), "");
+        IERC20(to).safeTransfer(msg.sender, value);
+        emit FundedToken(to, msg.sender, value);
+        return true;
+    }
+
+    function _transter(address sender, address recipient, uint256 amount) internal {
+        uint burnAmount = amount * traTax / 100;
+        
 
     }
 
