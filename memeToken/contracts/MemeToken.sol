@@ -64,7 +64,7 @@ contract MemeToken is ERC20, Ownable{
         _inSwap = false;
     }
 
-    modifier tradingChack(address from, address to){
+    modifier tradingCheck(address from, address to){
         // 如果交易未启用，只允许owne和免手续费的地址交易
         if(!tradingEnabled){
             require(isExcludedFromFee[from] || isExcludedFromFee[to], "");
@@ -113,7 +113,7 @@ contract MemeToken is ERC20, Ownable{
         allocations.push(Allocation(treasuryWallet, "Project Treasury", 60, 730));
     }
 
-    function _transfer(address from, address to, uint256 amount) override internal tradingChack(from, to) {
+    function __transfer(address from, address to, uint256 amount) internal  tradingCheck(from, to) {
         require(from != address(0), "Transfer from zero address");
         require(to != address(0), "Transfer to zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
