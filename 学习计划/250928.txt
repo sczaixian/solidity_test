@@ -1,0 +1,100 @@
+真实DAPP项目拆解
+
+1、吃透训练营准备的两个真正DAPP项目：
+a）先观看视频和课件，深入理解它们的架构、模块划分、业务需求；
+b）阅读后端和合约目录下的代码，理解关键业务的代码流程；
+c）在本地部署后端代码，在测试网上面部署合约代码，手工调用合约接口，观察后端处理流程，查询后端API接口数据；
+抵押借贷Pledge：https://github.com/MetaNodeAcademy/ProjectBreakdown-Pledge；
+交易市场NFTMarket：https://github.com/MetaNodeAcademy/ProjectBreakdown-NFTMarket；
+
+d）了解一下Web3行业龙头项目的核心架构；
+借贷：Aave，Compound，MakerDAO（改名为Sky）；
+NFT：OpenSea，MagicEden，Blur；
+
+2、（可选，推荐）对DAPP龙头项目的架构也要有一些了解，能够掌握它们的核心架构：
+代币交易DEX：Uniswap V2 & V3；
+Github：https://github.com/Uniswap/v3-core；
+Awesome Uniswap V3：https://github.com/GammaStrategies/awesome-uniswap-v3；
+Uniswap 专题：从V1到V4：https://space.bilibili.com/220951871/lists/5076602?type=season；
+
+借贷协议：Aave V2 & V3；
+Github：https://github.com/aave/aave-v3-core；
+官方开发文档：https://aave.com/docs/developers/aave-v3。
+Aave Protocol V3 Architecture Overview：https://blog.blockmagnates.com/aave-protocol-v3-architecture-overview-4fa3e69db20b。
+Modern DeFi Lending Protocols, how it's made: Aave V3：https://mixbytes.io/blog/modern-defi-lending-protocols-how-its-made-aave-v3。
+How AAVE works with visualization：https://medium.com/@0xape/how-aave-works-with-visualization-a612f41d0742。
+Aave V3 DeFi课程：https://updraft.cyfrin.io/courses/aave-v3。
+
+3、（可选，推荐）熟悉常用的ERC（EIP）标准：
+DEX（Uniswap）：ERC-20, ERC-2612, ERC-721, EIP-712；
+借贷（Aave）：ERC-20, ERC-2612, ERC-4626, EIP-712；
+NFT（OpenSea）：ERC-721, ERC-1155, ERC-165, ERC-2981, ERC-1271, EIP-712；
+
+
+
+
+
+
+
+
+
+
+
+
+建议熟悉一些以太坊生态常见的ERC（EIP）标准，在谷歌上面可以搜索到更加详细的文档。
+
+🔹 代币类标准
+
+ERC-20：最基础的同质化代币标准。
+应用：
+Uniswap 用来定义可交易的 Token（例如 USDC、DAI）。
+Aave 用于生成借贷衍生代币（如 aToken）。
+
+ERC-721（NFT 标准）：用于不可替代代币（NFT）。
+应用：
+OpenSea 核心依赖（收藏品、艺术品、门票）。
+
+ERC-1155（多资产标准）：支持同时发行同质化与非同质化代币。
+应用：
+OpenSea 广泛支持，用于游戏资产（比如同一个道具可以是多份）。
+
+🔹 扩展类标准
+
+ERC-165（接口检测标准）：可以让合约声明“我实现了哪些接口”。
+应用：
+OpenSea、Uniswap V3 NFT LP Token 等需要检测合约是否支持 ERC-721/1155。
+
+ERC-2612（Permit 扩展，EIP-2612）：在 ERC-20 基础上增加 permit 方法（基于签名的授权），避免用户必须先调用 approve。
+应用：
+Uniswap 提供更顺滑的交易体验（用户签一次名即可完成授权+交易）。
+Aave 也支持，方便抵押物授权。
+
+ERC-4626（Tokenized Vaults）：用于定义收益型资产的金库（vault），比如存款凭证。
+应用：
+Aave、Yearn 等借贷/收益协议正逐步采纳，统一收益凭证接口。
+
+🔹 账户与元交易
+
+ERC-1271（合约账户签名验证）：让智能合约钱包可以验证签名（非 EOAs）。
+应用：
+OpenSea 适配 Gnosis Safe 等智能钱包用户。
+
+EIP-712（结构化数据签名）：用于人类可读、可验证的消息签名（Typed Data）。
+应用：
+Uniswap/Aave/OpenSea 等 DApp 广泛使用，比如 “你正在授权给某合约使用你的资产”。
+
+🔹 NFT 相关扩展
+ERC-2981（NFT 版税标准）：定义 NFT 版税的返回接口。
+应用：
+OpenSea 支持，方便创作者获得二级市场交易分成。
+
+ERC-4907（租赁 NFT 标准）：增加 user 和 expires 字段，支持 NFT 出租。
+应用：
+一些游戏类 NFT 在 OpenSea 上已支持。
+
+👉 总结
+Uniswap：ERC-20, ERC-2612, ERC-721 (LP NFT), EIP-712
+Aave：ERC-20, ERC-2612, ERC-4626, EIP-712
+OpenSea：ERC-721, ERC-1155, ERC-165, ERC-2981, ERC-1271, EIP-712
+
+在常见的DApp应用中，往往是 ERC-20/ERC-721/ERC-1155 作为核心资产标准，再叠加 ERC-2612、EIP-712、ERC-1271、ERC-2981 等扩展来增强体验和兼容性。
