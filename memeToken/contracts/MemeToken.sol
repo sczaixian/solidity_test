@@ -4,10 +4,25 @@ pragma solidity ^0.8;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "./InitialLiquidityProvider.sol";
+
+/*
+    1. 社区驱动：自发传播和集体共识，一个引人入胜、易于传播的故事或文化符号是其成功的基石
+            去中心化参与：诞生、推广等完全依靠社区自发行为，社区的活跃度、创造力、忠诚度决定其价格
+            病毒式传播：通关媒体快速传播，自发宣传
+            治理权共享：共同参与项目决策和治理，参与感强
+    2. 文化共鸣：
+            基于流行文化、身份认同工具（持有该币成为用户表达价值观或社群归属的方式）
+    3. 低门槛与公平启动：全民参与的投机游戏
+            无预售，全流通，代币全部释放没有锁仓
+            极低价格与高供应量，吸引小额投机者
+            易创建、快速迭代
+    4. 价格波动极高
+            由于缺乏内在价值或实际收益作为支撑，价格完全有市场情绪和操作驱动（名人效应 一条推特或视频引发价格剧烈波动）
+            高投机性 短期高回报而不是长期持有
+    5. 供应与通缩机制简单：缺乏强有力的经济逻辑作为支撑
+            永久的移除不分代币通过减少供应推高价格
+*/
 
 contract MemeToken is ERC20, Ownable{
     address public _owner;    
@@ -113,7 +128,7 @@ contract MemeToken is ERC20, Ownable{
         allocations.push(Allocation(treasuryWallet, "Project Treasury", 60, 730));
     }
 
-    function __transfer(address from, address to, uint256 amount) internal  tradingCheck(from, to) {
+    function _update(address from, address to, uint256 amount) override internal  tradingCheck(from, to) {
         require(from != address(0), "Transfer from zero address");
         require(to != address(0), "Transfer to zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
@@ -257,7 +272,7 @@ contract MemeToken is ERC20, Ownable{
      * @dev 提取意外发送到合约的代币
      */
     function rescueTokens(address tokenAddress, uint256 amount) external onlyOwner {
-        IERC20(tokenAddress).transfer(msg.sender, amount);
+        ERC20(tokenAddress).transfer(msg.sender, amount);
     }
    
     
