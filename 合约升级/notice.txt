@@ -1,0 +1,12 @@
+
+
+
+
+初始合约A（Implementation A）
+
+升级合约B（Implementation B）
+
+代理合约（Proxy）
+
+
+用户与代理合约交互，代理合约将调用委托给实现合约。

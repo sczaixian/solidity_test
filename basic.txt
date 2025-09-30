@@ -800,6 +800,71 @@ contract Derived is IBase {
 
 
 
+
+
+-----------------------------  存储槽位  ----------------------------------
+contract StorageSchema {
+    // 可升级合约状态变量需要封装进结构体，与升级无关的可以不封装
+    struct AppStorage {
+        mapping(address => uint256) balances;
+        uint256 totalSupply;
+        address implementation;
+    }
+
+    // 使用 keccak256 生成唯一的存储槽位置
+    // 避免与其他合约的存储冲突
+    // 字符串 "diamond.storage.app" 作为命名空间
+    bytes32 constant APP_STORAGE_POSITION = keccak256("diamond.storage.app");
+    
+    // 内联汇编直接操作 EVM 存储槽
+    // 返回对特定存储位置的引用 这种模式绕过 Solidity 的自动存储布局
+    function appStorage() internal pure returns (AppStorage storage ds) {
+        bytes32 position = APP_STORAGE_POSITION;
+        assembly { ds.slot := position }   // 将结构体的slot指向计算的位置
+    }
+}
+
+
+// 好的命名空间
+keccak256("com.myproject.storage.v1")
+keccak256(abi.encode(address(this), "storage")) // 合约特定
+keccak256("my.token.storage.mainnet")
+
+
+
+// 添加权限检查
+modifier onlyStorageAccess() {
+    AppStorage storage s = appStorage();
+    require(msg.sender == s.owner, "Unauthorized");
+    _;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -----------------------------js  ts 语法相关----------------------------------
 // 立即执行函数
 ;(function() {
