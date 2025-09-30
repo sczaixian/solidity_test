@@ -73,7 +73,7 @@ contract MyContractV1 is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     }
     
     // 获取版本信息
-    function version() external pure returns (string memory) {
+    function version() virtual external pure returns (string memory) {
         return "v1.0.0";
     }
 }
