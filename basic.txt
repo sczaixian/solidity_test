@@ -773,7 +773,7 @@ abstract contract AbstractBase {
 
 // 定义了一组标准的函数签名，用于合约之间通信时的约定。与抽象合约不同的是
 // 接口定义函数签名但不实现，强制派生合约实现所有函数
-// 所有函数默认为 external 和 virtual
+// 所有函数默认为 external 和 virtual 接口中的函数默认就是隐式 virtual 的​​ 所以不用写virtual
 // 不允许有状态变量和实现逻辑
 // 不允许构造函数
 // 不能继承除接口外的其他合约
