@@ -98,3 +98,12 @@ Aave：ERC-20, ERC-2612, ERC-4626, EIP-712
 OpenSea：ERC-721, ERC-1155, ERC-165, ERC-2981, ERC-1271, EIP-712
 
 在常见的DApp应用中，往往是 ERC-20/ERC-721/ERC-1155 作为核心资产标准，再叠加 ERC-2612、EIP-712、ERC-1271、ERC-2981 等扩展来增强体验和兼容性。
+
+
+
+
+
+
+
+
+

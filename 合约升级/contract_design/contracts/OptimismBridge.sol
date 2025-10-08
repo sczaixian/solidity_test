@@ -27,11 +27,10 @@ L2作为执行层：交易在L2快速执行
   - 执行提款转账
 
 
-
 挑战期保护: 7天欺诈证明窗口
 消息验证: 仅允许跨链消息系统调用完成函数
 防重放: 使用nonce防止重复提款
-权限控制: 严格的身份验证  
+权限控制: 严格的身份验证
 */
 
 /**
@@ -69,7 +68,6 @@ contract OptimismBridge {
     constructor(address _optimismPortal, address _l2Messenger) {
         require(_optimismPortal != address(0), "Invalid portal address");
         require(_l2Messenger != address(0), "Invalid messenger address");
-        
         OPTIMISM_PORTAL           = _optimismPortal;
         L2_CROSS_DOMAIN_MESSENGER = _l2Messenger;
     }
@@ -130,12 +128,7 @@ contract OptimismBridge {
         });
         
         // 编码提款消息 - 发送到L1的此合约
-        bytes memory withdrawalData = abi.encodeWithSelector(
-            this.finalizeWithdrawal.selector,
-            msg.sender,
-            amount,
-            currentNonce
-        );
+        bytes memory withdrawalData = abi.encodeWithSelector(this.finalizeWithdrawal.selector, msg.sender, amount, currentNonce);
         
         // 通过跨链消息传递发起提款
         (bool success, ) = L2_CROSS_DOMAIN_MESSENGER.call(
