@@ -20,6 +20,7 @@ contract MyContractV1 is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
+        // 锁定合约的初始化函数​​，防止攻击者直接调用实现合约中的初始化逻辑，从而避免安全漏洞
         _disableInitializers();
     }
     

@@ -1,0 +1,86 @@
+
+
+
+触发fallback() 还是 receive()?
+           接收ETH
+              |
+         msg.data是空？
+            /  \
+          是    否
+          /      \
+receive()存在?   fallback()
+        / \
+       是  否
+      /     \
+receive()   fallback()
+
+
+
+一个合约最多有一个receive()函数,函数不能有任何的参数，不能返回任何值，必须包含external和payable。
+fallback()声明时不需要function关键字，必须由external修饰，一般也会用payable修饰
+
+
+eth 和  erc20、erc721 不同，eth是原生代币， 
+usdt usdc  eurt 这些都是  erc20，
+
+继承：提高代码复用率
+组合：解耦，模块动态组合（替代多继承）
+接口：定义交互规范（不同合约间行为协议），隐藏实现细节 除函数、事件、错误，不能有状态变量或构造函数  external 和 virtual， 默认 virtual， 不能实现任何函数
+抽象：提供默认的行为模板，含未实现函数（部分实现）
+库  ：用于封装常用函数的代码模块，提高代码的维护性和安全性（数学运算、数组操作等），由函数组成，不能定义状态变量，不能修改状态信息，没有独立上下文
+      如果库中都是 internal 那么编译器会将代码嵌入到调用合约，这个库就是内嵌库
+
+using xxx for address：将库函数绑定到特定类型
+address add;  add.fdfds();
+
+
+
+erc20:
+name、symbol、decimals、totalSupply()、
+transfer(address to, uint256 value) bool、
+transferFrom(address, address, value)、 代表a行使转账
+allowance(address, address) returns(uint256)、
+approve(address to, uint256) onlyOwner、
+
+event: transfer, approvl
+
+require() 函数来检查代币余额是否充足，以及适当管理交易的状态变化来防止双重花费
+ERC20 的安全性考量有哪些?
+使用 SafeMath 防止整数溢出。
+防止 approve() 和 transferFrom() 的双花漏洞，如先将批准数量设置为 0，再更新新的授权数量。
+确保合约不会意外接收和锁定代币（如增加 withdraw() 函数，允许错误转入的代币退回）。
+确保 transfer() 和 transferFrom() 在代币余额不足时会正确回滚交易
+
+erc721:
+
+
+erc165:
+interface IERC165 {
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+
+contract ERC165 is IERC165 {
+    mapping(bytes4 => bool) private _supportedInterfaces;
+    constructor() {
+        _registerInterface(type(IERC165).interfaceId);
+    }
+    function _registerInterface(bytes4 interfaceId) internal virtual {
+        require(interfaceId != 0xffffffff, "ERC165: invalid interface id");
+        _supportedInterfaces[interfaceId] = true;
+    }
+    function supportsInterface(bytes4 interfaceId)  public  view  virtual  override  returns (bool)  {
+        return _supportedInterfaces[interfaceId];
+    }
+}
+contract MyMultiToken is ERC165, IERC20Example, IERC721Example, IMintable {
+    constructor() {
+        _registerInterface(type(IERC20Example).interfaceId); 
+        _registerInterface(this.myFunction.selector);
+    }
+
+    function ttt() public pure returns (bytes4) {
+        // return type(IERC20Example).interfaceId;  //  0xd9a51e8a  true     明确注册的才是true
+        // return this.mint.selector;   // 0x40c10f19  false
+        return IERC20Example.transfer.selector;   // 0xa9059cbb  false
+    }
+}

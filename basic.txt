@@ -15,7 +15,6 @@ uint256 ----  16
 IPFS
 https://docs.ipfs.tech/install/ipfs-desktop/#windows
 
-
     预言机：输入预言机（链下往链上送数据）；输出预言机；计算预言机（链下执行计算任务）
 
     预言机是指获取、验证外部信息（即存储在链下的信息）并将外部信息传送给在区块链上运行的智能合约的应用程序
@@ -773,10 +772,10 @@ abstract contract AbstractBase {
 
 // 定义了一组标准的函数签名，用于合约之间通信时的约定。与抽象合约不同的是
 // 接口定义函数签名但不实现，强制派生合约实现所有函数
-// 所有函数默认为 external 和 virtual 接口中的函数默认就是隐式 virtual 的​​ 所以不用写virtual
+// 所有函数默认为 external 和 virtual 接口中的函数默认就是隐式 virtual 的 所以不用写virtual
 // 不允许有状态变量和实现逻辑
 // 不允许构造函数
-// 不能继承除接口外的其他合约
+// 接口不能继承除接口外的其他合约
 // 可用于调用链上已部署合约的 ABI
 interface IBase {
     function getValue() external view returns (uint256);

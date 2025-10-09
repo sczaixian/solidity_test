@@ -7,6 +7,24 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 
+/**
+    通过伪造大量虚假身份来得到远大于自己身份应该有的权利，或者干扰影响系统运行
+
+    一个用户多个钱包地址参与代币铸造     用多个机器人钱包抢先铸造热门NFT项目    收取铸造费用，限制每个地址的铸造数量
+    大量虚假账户领取空投              用户创建数百个地址领取UNI等代币空投（defi空投）    身份认证验证身份不暴露隐私，邮箱或手机号，社区图谱分析
+    控制大量网络p2p网络节点影响交易传播    早起比特币攻击者尝试创建大量节点来主导网络
+    使用虚假身份参与DAO投票
+
+    基于历史行为的信誉评分、链上活动分析、工作量证明（简单的计算题）
+    
+    当前前沿防御方案
+        人性证明(PoH)：如Worldcoin的眼球扫描
+        社交图谱分析：分析地址间的关联关系
+        零知识证明：验证真实身份而不暴露隐私
+        延迟满足机制：要求资产长期锁定
+
+ */
+
 // 防女巫攻击铸造合约  通过链下签名验证防止用户创建多个钱包进行批量铸造
 contract SybilResistantMint is Ownable, ReentrancyGuard {
     using ECDSA for bytes32;
