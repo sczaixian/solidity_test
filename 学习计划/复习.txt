@@ -44,7 +44,7 @@ receive()   fallback()
 
 一个合约最多有一个receive()函数,函数不能有任何的参数，不能返回任何值，必须包含external和payable。
 fallback()声明时不需要function关键字，必须由external修饰，一般也会用payable修饰
-
+fallback()会在调用合约不存在的函数时被触发。可用于接收ETH，也可以用于代理合约proxy contract
 
 eth 和  erc20、erc721 不同，eth是原生代币， 
 usdt usdc  eurt 这些都是  erc20，
