@@ -72,6 +72,23 @@ Uniswap和Curve是交易赛道的龙头，MakerDAO、AAVE和Compound是借贷赛
 
 
 
+
+
+
+
+
+
+​​Position（头寸）​​ 是流动性提供者（LP）在特定价格区间内提供流动性的核心管理单元
+通过非同质化代币（NFT）形式唯一标识每个 LP 的流动性分配策略，并记录与手续费、流动性变化相关的关键数据
+
+
+
+
+
+
+
+
+
 ------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------
@@ -348,3 +365,230 @@ erc721 协议
 
 
 
+
+
+
+stack 
+startblock、endblock
+totalWeight
+每个block产出多少个MetaNode
+
+
+Pool
+    tokenAddr （token的address）
+    tokenAmount（总共质押了多少token）
+    最小质押数 
+    每个token换算多少MetaNode
+    weight
+    lastRewordBlock(上传产出奖励的block)触发用于计算一段时间内奖励
+    unlockBlockNum 多少个block解锁
+
+User
+    tokenAmount 用户质押了多少token
+    finishReward 已经领取的MetaNode
+    待领取的MetaNode
+    requestQ []
+
+requestQ
+    unlockBlock
+    amount 
+
+
+pool[]  pools;
+mapping(uint256 => mapping(address => user )) user;
+pool-> uaddr -> user -> tokenAmount -> 
+结合 pool  user  可以计算出相应的数量
+
+
+deposit（Eth token）、unstake
+    stake （ amount ， pid ） 
+        update pool 
+        amount 》 0 && amount 》 min 
+        pool 、user（pool 的user）
+        pool amount += amount 
+
+        先计算 最近一段时间的收货
+        finish 》 0
+        待领取 = user.amount * pool.per / eth - finishReward
+        if 待领取 》0
+            user.待领取 = 待领取 + user.待领取
+        // ----------以上先把历史更新了
+        
+        置换得到的memtoken = amount * per
+        user。amount+= amount 
+        // 更新user 的奖励，并且更新 request 的解锁block等
+        --不需要因为会在下一次更新-》user.待领取 += 置换得到的memtoken
+
+
+
+    unstake  pid  amount 
+        update pool   
+        amount > 0
+        amount < user.amount 
+
+        更新 user.pending
+        user.amount -= amount
+        request.push = {
+            amount 
+            block.num + unlockBlockNum
+        }
+
+        pool.amount -= amount 
+        user.finishReward = user.amoutn * p.per / 1eth 
+        
+
+
+withdraw、claim
+    withdraw  取走  token (pid )
+    校验pid合法
+    pool
+    user
+    request = user.request 
+    
+    for i ，i 《 requests。length
+        if  block.num >= unlockBlockNum
+            amount += amount 
+    // 删除节点
+    if pool.tokenAddr == address(0x00)
+
+        payable(address(this)).call{value:amount}();
+    else 
+        IERC20(pool.tokenaddress).safetransfer( msg.sender, amount)
+
+        
+
+
+    claim 领取分红
+        pid
+
+
+addpool、updatepool
+    addpool  tokenaddr unblockNum weight perMetaNode min最少数量
+    第一个pool必须是 eth 判断  pool.length  和 token.addr = address(0)
+    unblockNum>0
+    block.number < endBlock
+
+    pool.push(
+        Pool({
+            // ....
+        })
+    )
+    emit();
+
+    updatePool(){
+        更新 每个 token 可以换多少MetaNode
+        lastRewordBlock
+
+        
+        每块产出 = block。Num- last * 每块产出 （block。Num 《= endblock）* weight   / 总权重 
+        最新阶段的每块产出 = 每块产出 / 1eth 
+        历史 的per + 最新的 = 更新的
+    }
+
+角色、暂停、可升级合约
+
+
+initializeable
+UUPSUpgradeable
+accesscontrupgrable
+pauseAbleupgrable
+
+function _authorizeUpgrade()
+function _initialize()
+
+角色 
+紧急情况暂停
+每个区块产出 MetaNode 数量 
+总权重 
+IERC20 token (需要初始化)
+
+startblock、endblock 
+
+
+结构体  pool  request  user 
+addr  amount  per  min  weight lastRewordBlock locknum
+pool[]  数组
+pool -> userAddr -> user 映射
+
+多个池子
+质押token 或者 eth （必须是第一个）
+
+addpool   tokenaddr  per   min  weight   locknum
+    需要判断池子是不是eth的池子
+
+    min >0  , block.number < endblock 
+
+    pool.push(Pool({ ... }))  emit 
+
+update pool 
+    判断last和当前块
+    更新  per  lastRewordBlock
+    // 计算 上次 到这次(或者endblock) 产生的 MetaNode 
+    必须大于0
+    跟新： MetaNode / weight * totalWeight / 1eth = per + per
+    更新 lastRewordBlock
+    emit 
+
+deposit 
+    eth->msg.value 、 token  amount 
+    转账到 MetaNode 
+    执行_deposit
+    update pool
+
+    1、更新池子
+        amount 
+    2、更新user
+        先更新pending   --》  amount * per - finish 如果大于0  pending + 值
+        在更新amount  += amount
+        在计算新的 finishReward  per*amount 
+        更新pool
+    emit
+
+withdraw
+    提款 传入 pid 
+    将resquest队列中的 已经解冻的 node 聚合计算，得到金额 ，然后删除节点
+    转账 
+
+    pid 
+    user = user[pid][msg.sender]
+    []request = user.request
+    amount 
+    遍历 block比较 累加 amount 得到index
+    将 后面的迁移
+    删除pop
+    if pid == 0
+        payable(address(this)).call{value:amount}()
+    esle:
+        IERC20(address(this)).safeTransfer(msg.sender, amount);
+    emit
+    
+
+claim 
+    领取奖励 pid 
+    主要是把  pending 发送给 用户 
+    updatePool
+    计算  amount *  per / 1eth -finish  》 0
+    // 需要判断 能不能有足够的 token 有多少发多少
+    MetaNode.transfer(_to, MetaNodeBal);
+
+    finish = amount* per/ 1eth
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+feeGrowthInside0LastX128
+liquidity   
