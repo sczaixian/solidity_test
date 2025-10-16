@@ -590,5 +590,45 @@ claim
 
 
 
-feeGrowthInside0LastX128
-liquidity   
+DEX
+
+池子：  tokenA    tokenB   tickUpper  tickLower  free
+
+每个交易对 有多个池子，  tickUpper  tickLower  free  决定一个池子
+
+池子主要方法
+mint 添加流动性
+collect  提取代币
+burn 取消流动性，修改 position 之后 collect 用户取走代币
+swap 交换
+
+
+factory pool  poolManager  positionManager  swapRouter
+poolManager 创建 pool  它继承 factory 相当于一个工厂
+            查询 pool 以及 pool 集合
+
+position  头寸 是个 erc721 合约 每个头寸 有一个唯一的 uint176 private _nextId = 1; tokenId 
+头寸：  池子 ，  谁  ，  流动性是多少
+给流动性  计算出 两个代币分别是多少
+
+
+
+position
+    mint 
+        通关 pool mananger  找到pool
+        找到当前价格 以及上下区间
+        liquidity 计算得到  
+        调用 pool 的mint
+        铸造一个 nft 返回tokenid 给流动性提供者
+
+
+burn  减少流动性
+    给一个position id  也就是 nft 的tokenId
+    找到 position  ， 通过  两个 token  和  index 拿到 pool  调用pool 的 burn
+    burn 将 计算并更新手续费收益 还有减少的流动性token数量也加入到用户待领取的 数量上 后面调用collect时一并领取
+    
+collect 
+    position Id   和两种代币的金额  
+    比较待领取的金额 然后转账
+    更新状态
+    销毁 nft
