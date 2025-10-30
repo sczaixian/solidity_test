@@ -78,7 +78,7 @@ Uniswap和Curve是交易赛道的龙头，MakerDAO、AAVE和Compound是借贷赛
 
 
 
-​​Position（头寸）​​ 是流动性提供者（LP）在特定价格区间内提供流动性的核心管理单元
+Position（头寸） 是流动性提供者（LP）在特定价格区间内提供流动性的核心管理单元
 通过非同质化代币（NFT）形式唯一标识每个 LP 的流动性分配策略，并记录与手续费、流动性变化相关的关键数据
 
 
@@ -118,7 +118,7 @@ fallback()会在调用合约不存在的函数时被触发。可用于接收ETH�
 eth 和  erc20、erc721 不同，eth是原生代币， 
 usdt usdc  eurt 这些都是  erc20，
 
-继承：提高代码复用率
+继承：提高代码复用率 
 组合：解耦，模块动态组合（替代多继承）
 接口：定义交互规范（不同合约间行为协议），隐藏实现细节 除函数、事件、错误，不能有状态变量或构造函数  external 和 virtual， 默认 virtual， 不能实现任何函数
 抽象：提供默认的行为模板，含未实现函数（部分实现）
@@ -128,6 +128,11 @@ usdt usdc  eurt 这些都是  erc20，
 using xxx for address：将库函数绑定到特定类型
 address add;  add.fdfds();
 
+
+继承时  this ：
+A is B ， 那么如果A调用了B的方法，在B方法中 有  address(this)  那么地址就是A的地址
+组合时  this ：
+如上： 此时 地址应该是B的地址，不是A的地址
 
 
 
@@ -348,10 +353,12 @@ NFT Mint 合约按需部署：根据用户地址或 token ID 动态部署合约�
 你不用等他真的到场，就可以提前打印好他的门票，上面写明了座位号。
 这就是 地址可预测性 的直观意义！
 
+传统的 CREATE 每次都会生成不同的 address
+新地址 = keccak256(发送者地址 + Nonce)
+CREATE2 如果相同的 slot 那么第二次部署会失败
 
 
-
-
+以太坊 调用合约是基于目标地址来确定应该调用哪个合约的
 
 
 
@@ -367,268 +374,93 @@ erc721 协议
 
 
 
+--------------------------------------------------------------
+基本类型（如uint256, bool, address等）每个占用一个存储槽。
+动态数组（如PoolBaseInfo[]）在声明的位置存储数组长度，而数组元素则存储在通过Keccak-256哈希计算得到的槽开始的位置。
+映射（mapping）则不同，映射的键不存储实际数据，而是通过键的哈希来定位值的位置。具体来说，映射中键k对应的值存储在 keccak256(h(k) . p) 的位置，其中p是映射所在的存储槽，h是一个函数，根据键的类型不同而不同（对于值类型，就是直接填充到32字节；对于字符串或字节，则是Keccak-256哈希）。
+结构体（struct）在存储中会依次存放其每个成员，根据成员的类型占用一个或多个存储槽。
+常量（constant）和** immutable** 变量不占用存储槽，它们的值直接嵌入在合约字节码中。
 
-stack 
-startblock、endblock
-totalWeight
-每个block产出多少个MetaNode
-
-
-Pool
-    tokenAddr （token的address）
-    tokenAmount（总共质押了多少token）
-    最小质押数 
-    每个token换算多少MetaNode
-    weight
-    lastRewordBlock(上传产出奖励的block)触发用于计算一段时间内奖励
-    unlockBlockNum 多少个block解锁
-
-User
-    tokenAmount 用户质押了多少token
-    finishReward 已经领取的MetaNode
-    待领取的MetaNode
-    requestQ []
-
-requestQ
-    unlockBlock
-    amount 
-
-
-pool[]  pools;
-mapping(uint256 => mapping(address => user )) user;
-pool-> uaddr -> user -> tokenAmount -> 
-结合 pool  user  可以计算出相应的数量
-
-
-deposit（Eth token）、unstake
-    stake （ amount ， pid ） 
-        update pool 
-        amount 》 0 && amount 》 min 
-        pool 、user（pool 的user）
-        pool amount += amount 
-
-        先计算 最近一段时间的收货
-        finish 》 0
-        待领取 = user.amount * pool.per / eth - finishReward
-        if 待领取 》0
-            user.待领取 = 待领取 + user.待领取
-        // ----------以上先把历史更新了
-        
-        置换得到的memtoken = amount * per
-        user。amount+= amount 
-        // 更新user 的奖励，并且更新 request 的解锁block等
-        --不需要因为会在下一次更新-》user.待领取 += 置换得到的memtoken
 
+从 storage 中加载变量的值 
+// 源代码
+uint256 amount = minAmount;
+// 底层相当于
+uint256 amount = sload(0);  // 从存储槽 0 读取数据
+// 源代码
+minAmount = 200e18;
+// 底层相当于
+sstore(0, 200e18);  // 将数据存储到槽 0
 
 
-    unstake  pid  amount 
-        update pool   
-        amount > 0
-        amount < user.amount 
-
-        更新 user.pending
-        user.amount -= amount
-        request.push = {
-            amount 
-            block.num + unlockBlockNum
-        }
-
-        pool.amount -= amount 
-        user.finishReward = user.amoutn * p.per / 1eth 
-        
-
-
-withdraw、claim
-    withdraw  取走  token (pid )
-    校验pid合法
-    pool
-    user
-    request = user.request 
-    
-    for i ，i 《 requests。length
-        if  block.num >= unlockBlockNum
-            amount += amount 
-    // 删除节点
-    if pool.tokenAddr == address(0x00)
-
-        payable(address(this)).call{value:amount}();
-    else 
-        IERC20(pool.tokenaddress).safetransfer( msg.sender, amount)
-
-        
-
-
-    claim 领取分红
-        pid
-
-
-addpool、updatepool
-    addpool  tokenaddr unblockNum weight perMetaNode min最少数量
-    第一个pool必须是 eth 判断  pool.length  和 token.addr = address(0)
-    unblockNum>0
-    block.number < endBlock
-
-    pool.push(
-        Pool({
-            // ....
-        })
-    )
-    emit();
-
-    updatePool(){
-        更新 每个 token 可以换多少MetaNode
-        lastRewordBlock
+// 数组长度存储在槽 7：sload(7) 返回数组长度
+// 数组元素存储在：keccak256(7) + index
+PoolBaseInfo[] public poolBaseInfo;  // slot 7
+// 访问 poolBaseInfo[0]
+bytes32 baseSlot = keccak256(abi.encode(7));  // 计算起始位置
+PoolBaseInfo memory firstPool = readStruct(baseSlot);  // 读取结构体
+// 访问 poolBaseInfo[1]
+PoolBaseInfo memory secondPool = readStruct(baseSlot + 1);
+结构体存储是紧密相连的依次下移
 
-        
-        每块产出 = block。Num- last * 每块产出 （block。Num 《= endblock）* weight   / 总权重 
-        最新阶段的每块产出 = 每块产出 / 1eth 
-        历史 的per + 最新的 = 更新的
-    }
 
-角色、暂停、可升级合约
+// 访问 poolBaseInfo[0]
+bytes32 baseSlot = keccak256(abi.encode(7)); // 起始位置
+// 结构体字段位置：
+// poolBaseInfo[0].settleTime    -> baseSlot + 0
+// poolBaseInfo[0].endTime       -> baseSlot + 1
+// poolBaseInfo[0].interestRate  -> baseSlot + 2
+// ...
 
+// 访问 poolBaseInfo[1]
+// poolBaseInfo[1].settleTime    -> baseSlot + 13 (因为每个结构体占13个槽)
+// poolBaseInfo[1].endTime       -> baseSlot + 14
 
-initializeable
-UUPSUpgradeable
-accesscontrupgrable
-pauseAbleupgrable
 
-function _authorizeUpgrade()
-function _initialize()
 
-角色 
-紧急情况暂停
-每个区块产出 MetaNode 数量 
-总权重 
-IERC20 token (需要初始化)
 
-startblock、endblock 
 
 
-结构体  pool  request  user 
-addr  amount  per  min  weight lastRewordBlock locknum
-pool[]  数组
-pool -> userAddr -> user 映射
+mapping (address => mapping (uint256 => BorrowInfo)) public userBorrowInfo;  // slot 9
+// 访问 userBorrowInfo[userAddr][poolId]
+bytes32 slot = keccak256(      abi.encode(    poolId,  keccak256( abi.encode(userAddr, uint256(9)) )     )      );
+BorrowInfo memory info = readStruct(slot);
 
-多个池子
-质押token 或者 eth （必须是第一个）
 
-addpool   tokenaddr  per   min  weight   locknum
-    需要判断池子是不是eth的池子
 
-    min >0  , block.number < endblock 
 
-    pool.push(Pool({ ... }))  emit 
 
-update pool 
-    判断last和当前块
-    更新  per  lastRewordBlock
-    // 计算 上次 到这次(或者endblock) 产生的 MetaNode 
-    必须大于0
-    跟新： MetaNode / weight * totalWeight / 1eth = per + per
-    更新 lastRewordBlock
-    emit 
+struct BorrowInfo {
+    uint256 stakeAmount;    // 32字节
+    uint256 refundAmount;   // 32字节  
+    bool hasNoRefund;       // 1字节
+    bool hasNoClaim;        // 1字节
+}
 
-deposit 
-    eth->msg.value 、 token  amount 
-    转账到 MetaNode 
-    执行_deposit
-    update pool
+BorrowInfo public xxxx;   //  slot 10
 
-    1、更新池子
-        amount 
-    2、更新user
-        先更新pending   --》  amount * per - finish 如果大于0  pending + 值
-        在更新amount  += amount
-        在计算新的 finishReward  per*amount 
-        更新pool
-    emit
+// 源代码 
+uint256 amount = bb.stakeAmount;
+// 底层实现
+assembly {
+    let value := sload(10)  // 直接从 slot 10 读取
+    // 将 value 存储到内存返回
+}
 
-withdraw
-    提款 传入 pid 
-    将resquest队列中的 已经解冻的 node 聚合计算，得到金额 ，然后删除节点
-    转账 
+// 源代码  
+uint256 refund = bb.refundAmount;
 
-    pid 
-    user = user[pid][msg.sender]
-    []request = user.request
-    amount 
-    遍历 block比较 累加 amount 得到index
-    将 后面的迁移
-    删除pop
-    if pid == 0
-        payable(address(this)).call{value:amount}()
-    esle:
-        IERC20(address(this)).safeTransfer(msg.sender, amount);
-    emit
-    
+// 底层实现
+assembly {
+    let value := sload(11)  // 从 slot 11 读取
+}
 
-claim 
-    领取奖励 pid 
-    主要是把  pending 发送给 用户 
-    updatePool
-    计算  amount *  per / 1eth -finish  》 0
-    // 需要判断 能不能有足够的 token 有多少发多少
-    MetaNode.transfer(_to, MetaNodeBal);
+// 源代码
+bb.hasNoRefund = true;
 
-    finish = amount* per/ 1eth
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DEX
-
-池子：  tokenA    tokenB   tickUpper  tickLower  free
-
-每个交易对 有多个池子，  tickUpper  tickLower  free  决定一个池子
-
-池子主要方法
-mint 添加流动性
-collect  提取代币
-burn 取消流动性，修改 position 之后 collect 用户取走代币
-swap 交换
-
-
-factory pool  poolManager  positionManager  swapRouter
-poolManager 创建 pool  它继承 factory 相当于一个工厂
-            查询 pool 以及 pool 集合
-
-position  头寸 是个 erc721 合约 每个头寸 有一个唯一的 uint176 private _nextId = 1; tokenId 
-头寸：  池子 ，  谁  ，  流动性是多少
-给流动性  计算出 两个代币分别是多少
-
-
-
-position
-    mint 
-        通关 pool mananger  找到pool
-        找到当前价格 以及上下区间
-        liquidity 计算得到  
-        调用 pool 的mint
-        铸造一个 nft 返回tokenid 给流动性提供者
-
-
-burn  减少流动性
-    给一个position id  也就是 nft 的tokenId
-    找到 position  ， 通过  两个 token  和  index 拿到 pool  调用pool 的 burn
-    burn 将 计算并更新手续费收益 还有减少的流动性token数量也加入到用户待领取的 数量上 后面调用collect时一并领取
-    
-collect 
-    position Id   和两种代币的金额  
-    比较待领取的金额 然后转账
-    更新状态
-    销毁 nft
+// 底层实现
+assembly {
+    let currentPacked := sload(12)      // 读取当前值  布尔 占1位 会打包到一起
+    let newPacked := or(currentPacked, 0x01)  // 设置第0位为1    0x02
+    sstore(12, newPacked)               // 写回 slot 12
+}
