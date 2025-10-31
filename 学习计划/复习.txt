@@ -43,7 +43,8 @@ Uniswap和Curve是交易赛道的龙头，MakerDAO、AAVE和Compound是借贷赛
 
 
 
-
+chain list
+https://chainid.network/
 
 
 
