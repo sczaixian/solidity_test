@@ -388,6 +388,7 @@ erc721 协议
 uint256 amount = minAmount;
 // 底层相当于
 uint256 amount = sload(0);  // 从存储槽 0 读取数据
+
 // 源代码
 minAmount = 200e18;
 // 底层相当于
